@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import HeroBackground from "./HeroBackground";
 
 /* ── 3D Glass Illustrations (SVG + CSS) ── */
 
@@ -226,9 +227,8 @@ const Hero = () => {
   }, []);
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center pt-20 overflow-hidden grid-bg">
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-neon-blue/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-neon-purple/5 blur-[100px] pointer-events-none" />
+    <section id="home" className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+      <HeroBackground />
 
       <div className="container mx-auto px-4 lg:px-8 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         {/* Left */}
