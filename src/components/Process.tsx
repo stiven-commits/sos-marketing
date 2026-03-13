@@ -2,10 +2,30 @@ import { motion } from "framer-motion";
 import { Lightbulb, PenTool, Rocket, BarChart3 } from "lucide-react";
 
 const steps = [
-  { icon: Lightbulb, title: "Strategy", desc: "Analizamos tu negocio y definimos una estrategia digital clara.", color: "text-neon-blue" },
-  { icon: PenTool, title: "Design", desc: "Creamos contenido visual y comunicación alineada con tu marca.", color: "text-neon-purple" },
-  { icon: Rocket, title: "Launch", desc: "Implementamos campañas y activos digitales.", color: "text-neon-cyan" },
-  { icon: BarChart3, title: "Optimization", desc: "Medimos resultados y optimizamos continuamente.", color: "text-neon-blue" },
+  {
+    icon: Lightbulb,
+    title: "Estrategia",
+    desc: "Analizamos tu negocio y definimos una estrategia digital clara.",
+    color: "text-neon-blue",
+  },
+  {
+    icon: PenTool,
+    title: "Diseno",
+    desc: "Creamos contenido visual y comunicacion alineada con tu marca.",
+    color: "text-neon-purple",
+  },
+  {
+    icon: Rocket,
+    title: "Lanzamiento",
+    desc: "Implementamos campanas y activos digitales.",
+    color: "text-neon-cyan",
+  },
+  {
+    icon: BarChart3,
+    title: "Optimizacion",
+    desc: "Medimos resultados y optimizamos continuamente.",
+    color: "text-neon-blue",
+  },
 ];
 
 const Process = () => {
@@ -19,7 +39,7 @@ const Process = () => {
           className="text-center mb-16"
         >
           <h2 className="font-heading font-bold text-3xl md:text-4xl lg:text-5xl mb-4">
-            Cómo <span className="gradient-text">trabajamos</span>
+            Como <span className="gradient-text">trabajamos</span>
           </h2>
         </motion.div>
 

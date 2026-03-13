@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import logo from "@/assets/logo.png";
 
 const navLinks = [
-  { label: "Home", href: "#home" },
-  { label: "Services", href: "#services" },
-  { label: "Social Media Plans", href: "/planes-redes-sociales" },
-  { label: "Process", href: "#process" },
-  { label: "Contact", href: "#contact" },
+  { label: "Inicio", href: "#home" },
+  { label: "Servicios", href: "#services" },
+  { label: "Planes de Redes Sociales", href: "/planes-redes-sociales" },
+  { label: "Proceso", href: "#process" },
+  { label: "Contacto", href: "#contact" },
 ];
 
 const socialLinks = [
@@ -50,6 +50,9 @@ function BehanceIcon() {
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+  const sectionHref = (section: string) => (isHome ? `#${section}` : `/#${section}`);
 
   return (
     <motion.nav
@@ -59,7 +62,7 @@ const Navbar = () => {
       className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-border/30"
     >
       <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between h-16 lg:h-18">
-        <a href="#home" className="flex items-center gap-2">
+        <a href={sectionHref("home")} className="flex items-center gap-2">
           <img src={logo} alt="SOS Marketing Digital" className="h-9 w-auto" />
         </a>
 
@@ -77,7 +80,7 @@ const Navbar = () => {
             ) : (
               <a
                 key={link.href}
-                href={link.href}
+                href={sectionHref(link.href.replace("#", ""))}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
               >
                 {link.label}
@@ -102,10 +105,10 @@ const Navbar = () => {
             ))}
           </div>
           <a
-            href="#contact"
+            href={sectionHref("contact")}
             className="px-5 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm btn-glow"
           >
-            Get a Proposal
+            Solicitar propuesta
           </a>
         </div>
 
@@ -137,7 +140,7 @@ const Navbar = () => {
                 ) : (
                   <a
                     key={link.href}
-                    href={link.href}
+                    href={sectionHref(link.href.replace("#", ""))}
                     onClick={() => setMobileOpen(false)}
                     className="text-sm text-muted-foreground hover:text-foreground"
                   >
@@ -152,8 +155,8 @@ const Navbar = () => {
                   </a>
                 ))}
               </div>
-              <a href="#contact" onClick={() => setMobileOpen(false)} className="mt-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm text-center btn-glow">
-                Get a Proposal
+              <a href={sectionHref("contact")} onClick={() => setMobileOpen(false)} className="mt-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm text-center btn-glow">
+                Solicitar propuesta
               </a>
             </div>
           </motion.div>

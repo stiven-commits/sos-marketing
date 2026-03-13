@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 
 const serviceOptions = [
-  "Social Media",
+  "Gestion de Redes Sociales",
   "Meta Ads",
-  "Graphic Design",
-  "Web Development",
-  "Photography",
-  "Video Production",
+  "Diseno Grafico",
+  "Desarrollo Web",
+  "Fotografia",
+  "Produccion de Video",
 ];
 
 const ContactForm = () => {
@@ -17,7 +17,7 @@ const ContactForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // placeholder
-    alert("Message sent! We'll get back to you soon.");
+    alert("Mensaje enviado. Te contactaremos pronto.");
     setForm({ name: "", email: "", service: "", message: "" });
   };
 
@@ -31,7 +31,7 @@ const ContactForm = () => {
           className="text-center mb-12"
         >
           <h2 className="font-heading font-bold text-3xl md:text-4xl lg:text-5xl mb-4">
-            <span className="gradient-text">Contact</span> Us
+            <span className="gradient-text">Contáctanos</span>
           </h2>
         </motion.div>
 
@@ -43,48 +43,48 @@ const ContactForm = () => {
           className="glass-panel rounded-2xl p-8 lg:p-10 space-y-5 glow-purple"
         >
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Name</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Nombre</label>
             <input
               type="text"
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full px-4 py-3 rounded-lg bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-              placeholder="Your name"
+              placeholder="Tu nombre"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Correo</label>
             <input
               type="email"
               required
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full px-4 py-3 rounded-lg bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-              placeholder="your@email.com"
+              placeholder="tu@email.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Service Interest</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Servicio de interes</label>
             <select
               value={form.service}
               onChange={(e) => setForm({ ...form, service: e.target.value })}
               className="w-full px-4 py-3 rounded-lg bg-muted/50 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
             >
-              <option value="">Select a service</option>
+              <option value="">Selecciona un servicio</option>
               {serviceOptions.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Message</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Mensaje</label>
             <textarea
               rows={4}
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
               className="w-full px-4 py-3 rounded-lg bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition resize-none"
-              placeholder="Tell us about your project..."
+              placeholder="Cuentanos sobre tu proyecto..."
             />
           </div>
           <button
@@ -92,7 +92,7 @@ const ContactForm = () => {
             className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm btn-glow"
           >
             <Send className="w-4 h-4" />
-            Send Message
+            Enviar mensaje
           </button>
         </motion.form>
       </div>

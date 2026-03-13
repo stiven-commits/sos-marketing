@@ -2,12 +2,36 @@ import { motion } from "framer-motion";
 import { Share2, Target, Palette, Monitor, Camera, Video } from "lucide-react";
 
 const services = [
-  { icon: Share2, title: "Social Media Management", desc: "Estrategia, contenido y gestión profesional de redes sociales para posicionar tu marca y conectar con tu audiencia." },
-  { icon: Target, title: "Meta Ads Advertising", desc: "Campañas publicitarias en Facebook e Instagram diseñadas para atraer clientes potenciales y generar ventas." },
-  { icon: Palette, title: "Graphic Design", desc: "Diseños estratégicos que transmiten la identidad de tu marca y generan impacto visual." },
-  { icon: Monitor, title: "Web Development", desc: "Creamos páginas web modernas, rápidas y optimizadas para convertir visitantes en clientes." },
-  { icon: Camera, title: "Photography", desc: "Fotografía profesional de productos y servicios para redes sociales y campañas." },
-  { icon: Video, title: "Video Production", desc: "Producción y edición de videos comerciales que conectan con tu audiencia." },
+  {
+    icon: Share2,
+    title: "Gestion de Redes Sociales",
+    desc: "Estrategia, contenido y gestion profesional de redes sociales para posicionar tu marca y conectar con tu audiencia.",
+  },
+  {
+    icon: Target,
+    title: "Publicidad en Meta Ads",
+    desc: "Campanas publicitarias en Facebook e Instagram disenadas para atraer clientes potenciales y generar ventas.",
+  },
+  {
+    icon: Palette,
+    title: "Diseno Grafico",
+    desc: "Disenos estrategicos que transmiten la identidad de tu marca y generan impacto visual.",
+  },
+  {
+    icon: Monitor,
+    title: "Desarrollo Web",
+    desc: "Creamos paginas web modernas, rapidas y optimizadas para convertir visitantes en clientes.",
+  },
+  {
+    icon: Camera,
+    title: "Fotografia",
+    desc: "Fotografia profesional de productos y servicios para redes sociales y campanas.",
+  },
+  {
+    icon: Video,
+    title: "Produccion de Video",
+    desc: "Produccion y edicion de videos comerciales que conectan con tu audiencia.",
+  },
 ];
 
 const ServicesOverview = () => {
@@ -25,7 +49,7 @@ const ServicesOverview = () => {
             Nuestros <span className="gradient-text">Servicios</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Soluciones digitales diseñadas para atraer clientes, posicionar tu marca y convertir audiencias en clientes.
+            Soluciones digitales disenadas para atraer clientes, posicionar tu marca y convertir audiencias en clientes.
           </p>
         </motion.div>
 

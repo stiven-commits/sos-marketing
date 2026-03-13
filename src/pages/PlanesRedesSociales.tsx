@@ -10,12 +10,12 @@ const plans = [
     price: "399.99",
     featured: false,
     features: [
-      "8 publicaciones mensuales entre imágenes y reels",
-      "Diseño de los 8 post/videos de 15s a 40s",
+      "8 publicaciones mensuales entre imagenes y reels",
+      "Diseno de los 8 post/videos de 15s a 40s",
       "Copywriting del contenido",
       "Estrategia de redes Facebook e Instagram",
       "16 stories mensuales (pueden ser repetitivas)",
-      "Rediseño de highlights/destacados",
+      "Rediseno de highlights/destacados",
       "Acceso a plataforma online para aprobar contenido",
     ],
     note: "TikTok y LinkedIn tienen costo adicional.",
@@ -24,16 +24,16 @@ const plans = [
     name: "Plan Rocket",
     price: "449.99",
     featured: true,
-    label: "Most Popular",
+    label: "Mas popular",
     features: [
-      "12 publicaciones mensuales entre imágenes y reels",
-      "Diseño de los 12 post/videos de 15s a 40s",
+      "12 publicaciones mensuales entre imagenes y reels",
+      "Diseno de los 12 post/videos de 15s a 40s",
       "Copywriting del contenido",
       "Estrategia de redes Facebook e Instagram",
       "21 stories mensuales",
-      "Rediseño de highlights/destacados",
+      "Rediseno de highlights/destacados",
       "Acceso a plataforma online para aprobar contenido",
-      "30 USD en grupo de anuncios por 30 días",
+      "30 USD en grupo de anuncios por 30 dias",
     ],
     note: "TikTok y LinkedIn tienen costo adicional.",
   },
@@ -42,14 +42,14 @@ const plans = [
     price: "529.99",
     featured: false,
     features: [
-      "16 publicaciones mensuales entre imágenes y reels",
-      "Diseño de los 16 post/videos de 15s a 40s",
+      "16 publicaciones mensuales entre imagenes y reels",
+      "Diseno de los 16 post/videos de 15s a 40s",
       "Copywriting del contenido",
       "Estrategia de redes Facebook e Instagram",
       "30 stories mensuales",
-      "Rediseño de highlights/destacados",
+      "Rediseno de highlights/destacados",
       "Acceso a plataforma online para aprobar contenido",
-      "60 USD en grupo de anuncios por 30 días",
+      "60 USD en grupo de anuncios por 30 dias",
     ],
     note: "TikTok y LinkedIn tienen costo adicional.",
   },
@@ -70,8 +70,7 @@ const PlanesRedesSociales = () => {
             transition={{ duration: 0.6 }}
             className="font-heading font-bold text-3xl md:text-4xl lg:text-5xl mb-5"
           >
-            Planes para gestión de{" "}
-            <span className="gradient-text">redes sociales</span>
+            Planes para gestion de <span className="gradient-text">redes sociales</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 15 }}
@@ -105,14 +104,10 @@ const PlanesRedesSociales = () => {
                   </div>
                 )}
 
-                <h3 className="font-heading font-bold text-xl mb-2 text-foreground">
-                  {plan.name}
-                </h3>
+                <h3 className="font-heading font-bold text-xl mb-2 text-foreground">{plan.name}</h3>
 
                 <div className="mb-6">
-                  <span className="font-heading font-bold text-3xl lg:text-4xl text-foreground">
-                    ${plan.price}
-                  </span>
+                  <span className="font-heading font-bold text-3xl lg:text-4xl text-foreground">${plan.price}</span>
                   <span className="text-muted-foreground text-sm ml-1">USD / mes</span>
                 </div>
 
@@ -125,11 +120,7 @@ const PlanesRedesSociales = () => {
                   ))}
                 </ul>
 
-                {plan.note && (
-                  <p className="text-xs text-muted-foreground/70 italic mb-5">
-                    {plan.note}
-                  </p>
-                )}
+                {plan.note && <p className="text-xs text-muted-foreground/70 italic mb-5">{plan.note}</p>}
 
                 <a
                   href="https://wa.me/+584140170980"
@@ -160,8 +151,7 @@ const PlanesRedesSociales = () => {
             className="glass-panel rounded-3xl p-10 lg:p-16 max-w-2xl mx-auto glow-blue"
           >
             <h2 className="font-heading font-bold text-2xl md:text-3xl lg:text-4xl mb-6">
-              ¿Listo para impulsar tus{" "}
-              <span className="gradient-text">redes sociales</span>?
+              Listo para impulsar tus <span className="gradient-text">redes sociales</span>?
             </h2>
             <a
               href="https://wa.me/+584140170980"

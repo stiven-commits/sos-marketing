@@ -173,10 +173,10 @@ const CreativeDesignIllustration = () => (
 
 /* ── Illustrations map ── */
 const illustrations: Record<string, () => JSX.Element> = {
-  "Social Media": SocialMediaIllustration,
+  "Redes Sociales": SocialMediaIllustration,
   "Meta Ads": MetaAdsIllustration,
-  "Web Design": WebDesignIllustration,
-  "Creative Design": CreativeDesignIllustration,
+  "Diseno Web": WebDesignIllustration,
+  "Diseno Creativo": CreativeDesignIllustration,
 };
 
 /* ── Floating Card with per-card hover tracking ── */
@@ -284,10 +284,10 @@ const FloatingCard = ({
 
 /* ── Main Hero ── */
 const floatingCards = [
-  { label: "Social Media", delay: 0 },
+  { label: "Redes Sociales", delay: 0 },
   { label: "Meta Ads", delay: 0.15 },
-  { label: "Web Design", delay: 0.3 },
-  { label: "Creative Design", delay: 0.45 },
+  { label: "Diseno Web", delay: 0.3 },
+  { label: "Diseno Creativo", delay: 0.45 },
 ];
 
 const cardPositions = [
@@ -333,10 +333,10 @@ const Hero = () => {
           </p>
           <div className="flex flex-wrap gap-4">
             <a href="#contact" className="px-7 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm btn-glow">
-              Get a Proposal
+              Solicitar propuesta
             </a>
             <a href="#services" className="px-7 py-3 rounded-lg glass-panel glass-panel-hover text-foreground font-semibold text-sm transition-all duration-300">
-              Explore Services
+              Ver servicios
             </a>
           </div>
         </motion.div>
@@ -360,3 +360,4 @@ const Hero = () => {
 };
 
 export default Hero;
+

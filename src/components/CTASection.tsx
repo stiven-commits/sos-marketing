@@ -18,7 +18,7 @@ const CTASection = () => {
             Haz crecer tu marca en <span className="gradient-text">internet</span>
           </h2>
           <p className="text-muted-foreground text-lg mb-8 max-w-lg mx-auto">
-            Cuéntanos sobre tu proyecto y te enviaremos una propuesta personalizada.
+            Cuentanos sobre tu proyecto y te enviaremos una propuesta personalizada.
           </p>
           <a
             href="#contact"

@@ -1,6 +1,19 @@
-const services = ["Social Media", "Meta Ads", "Graphic Design", "Web Development", "Photography", "Video Production"];
+import { useLocation } from "react-router-dom";
+
+const services = [
+  "Gestion de Redes Sociales",
+  "Meta Ads",
+  "Diseno Grafico",
+  "Desarrollo Web",
+  "Fotografia",
+  "Produccion de Video",
+];
 
 const Footer = () => {
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+  const sectionHref = (section: string) => (isHome ? `#${section}` : `/#${section}`);
+
   return (
     <footer className="glass-panel border-t border-border/30 py-16">
       <div className="container mx-auto px-4 lg:px-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -14,18 +27,18 @@ const Footer = () => {
         </div>
 
         <div>
-          <h4 className="font-heading font-semibold text-sm mb-3 text-foreground">Services</h4>
+          <h4 className="font-heading font-semibold text-sm mb-3 text-foreground">Servicios</h4>
           <ul className="space-y-2">
             {services.map((s) => (
               <li key={s}>
-                <a href="#services" className="text-muted-foreground text-sm hover:text-foreground transition-colors">{s}</a>
+                <a href={sectionHref("services")} className="text-muted-foreground text-sm hover:text-foreground transition-colors">{s}</a>
               </li>
             ))}
           </ul>
         </div>
 
         <div>
-          <h4 className="font-heading font-semibold text-sm mb-3 text-foreground">Contact</h4>
+          <h4 className="font-heading font-semibold text-sm mb-3 text-foreground">Contacto</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <a href="mailto:atencion@sosmarketing.agency" className="hover:text-foreground transition-colors">atencion@sosmarketing.agency</a>
@@ -43,7 +56,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="container mx-auto px-4 lg:px-8 mt-10 pt-6 border-t border-border/20 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} SOS Marketing Digital. All rights reserved.
+        {new Date().getFullYear()} SOS Marketing Digital. Todos los derechos reservados.
       </div>
     </footer>
   );

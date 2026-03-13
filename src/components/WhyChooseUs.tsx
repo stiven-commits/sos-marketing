@@ -2,10 +2,10 @@ import { motion } from "framer-motion";
 import { Zap, Sparkles, TrendingUp, Shield } from "lucide-react";
 
 const features = [
-  { icon: Zap, title: "Strategic digital marketing" },
-  { icon: Sparkles, title: "Creative design & branding" },
-  { icon: TrendingUp, title: "Conversion focused campaigns" },
-  { icon: Shield, title: "Professional digital execution" },
+  { icon: Zap, title: "Marketing digital estrategico" },
+  { icon: Sparkles, title: "Diseno creativo y branding" },
+  { icon: TrendingUp, title: "Campanas enfocadas en conversion" },
+  { icon: Shield, title: "Ejecucion digital profesional" },
 ];
 
 const WhyChooseUs = () => {
@@ -19,7 +19,7 @@ const WhyChooseUs = () => {
             viewport={{ once: true }}
           >
             <h2 className="font-heading font-bold text-3xl md:text-4xl lg:text-5xl mb-6">
-              Más que <span className="gradient-text">marketing digital</span>
+              Mas que <span className="gradient-text">marketing digital</span>
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">
               Trabajamos con marcas personales y empresas que quieren crecer digitalmente con una estrategia profesional, creativa y enfocada en resultados.
