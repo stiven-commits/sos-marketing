@@ -86,11 +86,11 @@
   }
 
   .glow-blue {
-    box-shadow: 0 0 30px rgba(79, 140, 255, 0.15), 0 0 60px rgba(79, 140, 255, 0.05);
+    box-shadow: 0 0 30px rgba(0, 122, 255, 0.15), 0 0 60px rgba(0, 122, 255, 0.05);
   }
 
   .glow-purple {
-    box-shadow: 0 0 30px rgba(123, 109, 255, 0.15), 0 0 60px rgba(123, 109, 255, 0.05);
+    box-shadow: 0 0 30px rgba(98, 98, 98, 0.15), 0 0 60px rgba(98, 98, 98, 0.05);
   }
 
   .glow-cyan {
