@@ -99,11 +99,11 @@
 
   .btn-glow {
     @apply relative overflow-hidden transition-all duration-300;
-    box-shadow: 0 0 20px rgba(79, 140, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 122, 255, 0.2);
   }
 
   .btn-glow:hover {
-    box-shadow: 0 0 30px rgba(79, 140, 255, 0.4), 0 0 60px rgba(79, 140, 255, 0.15);
+    box-shadow: 0 0 30px rgba(0, 122, 255, 0.4), 0 0 60px rgba(0, 122, 255, 0.15);
     transform: translateY(-1px);
   }
 
