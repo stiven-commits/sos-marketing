@@ -194,6 +194,120 @@ const illustrations: Record<string, () => JSX.Element> = {
   "Creative Design": CreativeDesignIllustration,
 };
 
+/* ── Floating Card with per-card hover tracking ── */
+const FloatingCard = ({
+  label,
+  delay,
+  position,
+  index,
+  globalMouse,
+}: {
+  label: string;
+  delay: number;
+  position: string;
+  index: number;
+  globalMouse: { x: number; y: number };
+}) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState(false);
+  const [local, setLocal] = useState({ x: 0, y: 0 });
+  const Illustration = illustrations[label];
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    setLocal({ x, y });
+  };
+
+  // Global parallax (different depth per card)
+  const depth = 1 + index * 0.6;
+  const gx = globalMouse.x * 10 * depth;
+  const gy = globalMouse.y * 7 * depth;
+
+  // Per-card tilt (max 8deg), only on hover
+  const tiltX = hover ? local.y * -8 : globalMouse.y * -(2 + index);
+  const tiltY = hover ? local.x * 8 : globalMouse.x * (2 + index);
+
+  // Dynamic shadow shift
+  const shadowX = (hover ? local.x : globalMouse.x) * 8;
+  const shadowY = (hover ? local.y : globalMouse.y) * 8 + (hover ? 20 : 10);
+  const shadowBlur = hover ? 40 : 20;
+  const shadowOpacity = hover ? 0.35 : 0.15;
+
+  // Glow intensity
+  const glowOpacity = hover ? 0.25 : 0.08 + Math.abs(globalMouse.x + globalMouse.y) * 0.03;
+
+  const floatY = Math.sin(Date.now() * 0.001 + index * 1.5) * 4;
+
+  return (
+    <motion.div
+      ref={cardRef}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => { setHover(false); setLocal({ x: 0, y: 0 }); }}
+      onMouseMove={handleMouseMove}
+      initial={{ opacity: 0, y: 50, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.8, delay: 0.3 + delay, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className={`absolute ${position} w-[185px] cursor-default`}
+      style={{ zIndex: hover ? 10 : 1 }}
+    >
+      <motion.div
+        animate={{
+          x: gx,
+          y: gy + floatY,
+          rotateX: tiltX,
+          rotateY: tiltY,
+          scale: hover ? 1.06 : 1,
+        }}
+        transition={{ type: "spring", stiffness: 120, damping: 18, mass: 0.8 }}
+        style={{
+          transformStyle: "preserve-3d",
+          perspective: 800,
+          boxShadow: `${shadowX}px ${shadowY}px ${shadowBlur}px rgba(0,0,0,${shadowOpacity})`,
+        }}
+        className="rounded-2xl p-5 relative overflow-hidden"
+      >
+        {/* Glass background */}
+        <div
+          className="absolute inset-0 rounded-2xl transition-all duration-500"
+          style={{
+            background: hover
+              ? "rgba(255,255,255,0.1)"
+              : "rgba(255,255,255,0.06)",
+            border: `1px solid rgba(255,255,255,${hover ? 0.22 : 0.12})`,
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+          }}
+        />
+        {/* Glow overlay */}
+        <div
+          className="absolute inset-0 rounded-2xl transition-opacity duration-500 pointer-events-none"
+          style={{
+            background: `radial-gradient(circle at ${50 + (hover ? local.x : globalMouse.x) * 30}% ${50 + (hover ? local.y : globalMouse.y) * 30}%, rgba(79,140,255,${glowOpacity}), transparent 70%)`,
+            opacity: 1,
+          }}
+        />
+        {/* Shine reflection */}
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-700"
+          style={{
+            background: `linear-gradient(${135 + (hover ? local.x : 0) * 20}deg, rgba(255,255,255,${hover ? 0.08 : 0.03}) 0%, transparent 50%)`,
+          }}
+        />
+        {/* Content */}
+        <div className="relative z-10">
+          <div className="w-full h-28 mb-3">
+            <Illustration />
+          </div>
+          <p className="font-heading font-semibold text-sm text-foreground text-center">{label}</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 /* ── Main Hero ── */
 const floatingCards = [
   { label: "Social Media", delay: 0 },
@@ -230,7 +344,7 @@ const Hero = () => {
     <section id="home" className="relative min-h-screen flex items-center pt-20 overflow-hidden">
       <HeroBackground />
 
-      <div className="container mx-auto px-4 lg:px-8 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="container mx-auto px-4 lg:px-8 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
         {/* Left */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
@@ -256,32 +370,16 @@ const Hero = () => {
 
         {/* Right – 3D floating cards */}
         <div ref={containerRef} className="relative hidden lg:flex items-center justify-center min-h-[460px]">
-          {floatingCards.map((card, i) => {
-            const Illustration = illustrations[card.label];
-            const parallaxX = mouse.x * (8 + i * 4);
-            const parallaxY = mouse.y * (6 + i * 3);
-            const rotateX = mouse.y * -(3 + i);
-            const rotateY = mouse.x * (3 + i);
-
-            return (
-              <motion.div
-                key={card.label}
-                initial={{ opacity: 0, y: 40, scale: 0.85 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.7, delay: 0.3 + card.delay }}
-                style={{
-                  transform: `translate(${parallaxX}px, ${parallaxY}px) perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
-                  transition: "transform 0.15s ease-out",
-                }}
-                className={`absolute ${cardPositions[i]} glass-panel rounded-2xl p-5 w-[180px] card-lift`}
-              >
-                <div className="w-full h-28 mb-3">
-                  <Illustration />
-                </div>
-                <p className="font-heading font-semibold text-sm text-foreground text-center">{card.label}</p>
-              </motion.div>
-            );
-          })}
+          {floatingCards.map((card, i) => (
+            <FloatingCard
+              key={card.label}
+              label={card.label}
+              delay={card.delay}
+              position={cardPositions[i]}
+              index={i}
+              globalMouse={mouse}
+            />
+          ))}
           {/* Central glow */}
           <div className="w-48 h-48 rounded-full bg-gradient-to-br from-neon-blue/10 via-neon-purple/10 to-neon-cyan/10 blur-[60px] animate-glow-pulse" />
         </div>
