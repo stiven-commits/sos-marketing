@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import HeroBackground from "./HeroBackground";
 
 /* ── 3D Glass Illustrations (SVG + CSS) ── */
 
