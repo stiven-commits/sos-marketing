@@ -186,6 +186,14 @@ const CreativeDesignIllustration = () => (
   </div>
 );
 
+/* ── Illustrations map ── */
+const illustrations: Record<string, () => JSX.Element> = {
+  "Social Media": SocialMediaIllustration,
+  "Meta Ads": MetaAdsIllustration,
+  "Web Design": WebDesignIllustration,
+  "Creative Design": CreativeDesignIllustration,
+};
+
 /* ── Floating Card with per-card hover tracking ── */
 const FloatingCard = ({
   label,
