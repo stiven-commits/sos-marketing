@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "@/assets/logo.png";
 
 const navLinks = [
   { label: "Home", href: "#home" },
@@ -58,8 +59,8 @@ const Navbar = () => {
       className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-border/30"
     >
       <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between h-16 lg:h-18">
-        <a href="#home" className="font-heading font-bold text-lg tracking-tight text-foreground">
-          SOS <span className="gradient-text">Marketing Digital</span>
+        <a href="#home" className="flex items-center gap-2">
+          <img src={logo} alt="SOS Marketing Digital" className="h-9 w-auto" />
         </a>
 
         {/* Desktop */}
