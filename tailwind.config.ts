@@ -62,8 +62,8 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         neon: {
-          blue: "#4F8CFF",
-          purple: "#7B6DFF",
+          blue: "#007AFF",
+          purple: "#626262",
           cyan: "#49E3FF",
         },
       },
