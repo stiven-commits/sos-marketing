@@ -14,7 +14,7 @@ import DisenoGrafico from "./pages/DisenoGrafico.tsx";
 import DesarrolloWeb from "./pages/DesarrolloWeb.tsx";
 import Fotografia from "./pages/Fotografia.tsx";
 import ProduccionVideo from "./pages/ProduccionVideo.tsx";
-import IAAutomation from "./pages/IAAutomation";
+import IAAutomation from "./pages/IAAutomation.tsx";
 import Legal from "./pages/Legal";
 import NotFound from "./pages/NotFound.tsx";
 
