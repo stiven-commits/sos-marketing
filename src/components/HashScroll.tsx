@@ -2,10 +2,13 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 const HashScroll = () => {
-  const { hash } = useLocation();
+  const { pathname, hash } = useLocation();
 
   useEffect(() => {
-    if (!hash) return;
+    if (!hash) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
 
     const id = hash.replace("#", "");
     const el = document.getElementById(id);
@@ -15,7 +18,7 @@ const HashScroll = () => {
     requestAnimationFrame(() => {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }, [hash]);
+  }, [pathname, hash]);
 
   return null;
 };

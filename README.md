@@ -1,73 +1,85 @@
-# Welcome to your Lovable project
+# SOS Marketing Web
 
-## Project info
+Landing page de SOS Marketing construida con React + Vite + TypeScript.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Estado del proyecto
 
-## How can I edit this code?
+Actualizado al **2026-03-13** con remanufacturacion del flujo de contacto:
 
-There are several ways of editing your application.
+- Formulario conectado a `POST /api/contact`.
+- Envio de correo con Resend.
+- Envio de campos: `name`, `email`, `service`, `message`.
+- Soporte en desarrollo local con middleware en Vite para evitar `404` en `/api/contact`.
+- Endpoint serverless separado para despliegue (`api/contact.ts`).
 
-**Use Lovable**
+## Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Vite
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn-ui
 
-Changes made via Lovable will be committed automatically to this repo.
+## Estructura clave
 
-**Use your preferred IDE**
+- `src/components/ContactForm.tsx`: formulario y `handleSubmit`.
+- `vite.config.ts`: middleware dev para `POST /api/contact`.
+- `api/contact.ts`: handler serverless (uso en despliegue).
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Variables de entorno
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Crear `.env.local` en la raiz:
 
-Follow these steps:
+```env
+RESEND_API_KEY=tu_api_key_de_resend
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Notas:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- `.env.local` no debe versionarse.
+- Si una key se expone, rotarla en Resend.
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Ejecucion local
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+El sitio corre en `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Flujo del formulario de contacto
 
-**Use GitHub Codespaces**
+1. Usuario completa nombre, correo, servicio de interes y mensaje.
+2. Frontend hace `fetch("/api/contact", { method: "POST" })`.
+3. En local, Vite middleware procesa la ruta y llama API de Resend.
+4. En despliegue serverless, `api/contact.ts` procesa la ruta.
+5. Se envia correo a `atencion@sosmarketing.agency`.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Troubleshooting rapido
 
-## What technologies are used for this project?
+- Error `404 /api/contact`:
+  - Verificar que se este ejecutando con `npm run dev`.
+  - Reiniciar dev server despues de cambios en `vite.config.ts`.
+- Error `Falta RESEND_API_KEY en el entorno`:
+  - Confirmar `RESEND_API_KEY` en `.env.local`.
+  - Reiniciar `npm run dev` para recargar variables.
+- Llega el correo sin servicio:
+  - Verificar que `service` se envie desde `ContactForm.tsx`.
+  - Verificar que se renderice `<b>Servicio:</b>` en handler.
 
-This project is built with:
+## Build y validacion
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+npm run build
+```
 
-## How can I deploy this project?
+Se ha validado build correcto despues de los cambios del flujo de contacto.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Memoria tecnica para futuras sesiones IA
 
-## Can I connect a custom domain to my Lovable project?
+Decisiones importantes tomadas:
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- Se evito exponer la API key en codigo y se migro a `RESEND_API_KEY`.
+- Se mantuvo compatibilidad entre desarrollo local (Vite middleware) y despliegue serverless (`api/contact.ts`).
+- Se priorizo envio de datos esenciales de contacto en el correo: nombre, email, servicio y mensaje.

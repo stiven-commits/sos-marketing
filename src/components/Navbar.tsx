@@ -2,12 +2,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/cropped-logo-SOS-marketing-2021-300x72.png.webp";
 
 const navLinks = [
   { label: "Inicio", href: "#home" },
   { label: "Servicios", href: "#services" },
-  { label: "Planes de Redes Sociales", href: "/planes-redes-sociales" },
+  { label: "Planes", href: "/planes-redes-sociales" },
   { label: "Proceso", href: "#process" },
   { label: "Contacto", href: "#contact" },
 ];
@@ -108,7 +108,7 @@ const Navbar = () => {
             href={sectionHref("contact")}
             className="px-5 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm btn-glow"
           >
-            Solicitar propuesta
+            Solicitar presupuesto
           </a>
         </div>
 
@@ -156,7 +156,7 @@ const Navbar = () => {
                 ))}
               </div>
               <a href={sectionHref("contact")} onClick={() => setMobileOpen(false)} className="mt-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm text-center btn-glow">
-                Solicitar propuesta
+                Solicitar presupuesto
               </a>
             </div>
           </motion.div>

@@ -132,7 +132,7 @@ const PlanesRedesSociales = () => {
                       : "glass-panel glass-panel-hover text-foreground"
                   }`}
                 >
-                  Solicitar propuesta
+                  Solicitar presupuesto
                 </a>
               </motion.div>
             ))}
@@ -159,7 +159,7 @@ const PlanesRedesSociales = () => {
               rel="noopener noreferrer"
               className="inline-block px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold btn-glow"
             >
-              Solicitar propuesta
+              Solicitar presupuesto
             </a>
           </motion.div>
         </div>

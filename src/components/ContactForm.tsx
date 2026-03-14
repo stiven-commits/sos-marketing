@@ -14,11 +14,26 @@ const serviceOptions = [
 const ContactForm = () => {
   const [form, setForm] = useState({ name: "", email: "", service: "", message: "" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // placeholder
-    alert("Mensaje enviado. Te contactaremos pronto.");
-    setForm({ name: "", email: "", service: "", message: "" });
+
+    const res = await fetch("/api/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: form.name,
+        email: form.email,
+        service: form.service,
+        message: form.message,
+      }),
+    });
+
+    if (res.ok) {
+      alert("Mensaje enviado");
+      setForm({ name: "", email: "", service: "", message: "" });
+    }
   };
 
   return (

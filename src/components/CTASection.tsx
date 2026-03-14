@@ -21,10 +21,12 @@ const CTASection = () => {
             Cuentanos sobre tu proyecto y te enviaremos una propuesta personalizada.
           </p>
           <a
-            href="#contact"
+            href="https://wa.me/+584140170980"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-block px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold btn-glow"
           >
-            Solicitar propuesta
+            Solicitar presupuesto
           </a>
         </motion.div>
       </div>

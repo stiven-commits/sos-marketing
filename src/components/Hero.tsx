@@ -333,7 +333,7 @@ const Hero = () => {
           </p>
           <div className="flex flex-wrap gap-4">
             <a href="#contact" className="px-7 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm btn-glow">
-              Solicitar propuesta
+              Solicitar presupuesto
             </a>
             <a href="#services" className="px-7 py-3 rounded-lg glass-panel glass-panel-hover text-foreground font-semibold text-sm transition-all duration-300">
               Ver servicios
