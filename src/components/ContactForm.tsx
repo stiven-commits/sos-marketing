@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const serviceOptions = [
   "Gestion de Redes Sociales",
@@ -12,6 +13,7 @@ const serviceOptions = [
 ];
 
 const ContactForm = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", service: "", message: "" });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,8 +33,8 @@ const ContactForm = () => {
     });
 
     if (res.ok) {
-      alert("Mensaje enviado");
       setForm({ name: "", email: "", service: "", message: "" });
+      navigate("/gracias");
     }
   };
 

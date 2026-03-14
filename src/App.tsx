@@ -7,6 +7,7 @@ import HashScroll from "@/components/HashScroll";
 import CookieConsent from "@/components/CookieConsent";
 import Index from "./pages/Index.tsx";
 import PlanesRedesSociales from "./pages/PlanesRedesSociales.tsx";
+import Gracias from "./pages/Gracias.tsx";
 import RedesSociales from "./pages/RedesSociales.tsx";
 import MetaAds from "./pages/MetaAds.tsx";
 import DisenoGrafico from "./pages/DisenoGrafico.tsx";
@@ -30,6 +31,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/planes-redes-sociales" element={<PlanesRedesSociales />} />
+          <Route path="/gracias" element={<Gracias />} />
           <Route path="/servicios/redes-sociales" element={<RedesSociales />} />
           <Route path="/servicios/meta-ads" element={<MetaAds />} />
           <Route path="/servicios/diseno-grafico" element={<DisenoGrafico />} />
