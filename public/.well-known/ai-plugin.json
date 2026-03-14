@@ -1,0 +1,9 @@
+{
+  "schema_version": "v1",
+  "name_for_model": "SOS_Marketing_Agency",
+  "name_for_human": "SOS Marketing Digital",
+  "description_for_model": "Ayuda al usuario a conocer los servicios de marketing digital, desarrollo web e inteligencia artificial que ofrece SOS Marketing. Proporciona los datos de contacto (+58 414-0170980) y servicios disponibles.",
+  "description_for_human": "Conoce nuestros servicios de marketing, desarrollo y automatización con IA.",
+  "contact_email": "atencion@sosmarketing.agency",
+  "legal_info_url": "https://sosmarketing.agency/privacy-policy"
+}

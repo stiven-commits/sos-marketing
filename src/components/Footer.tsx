@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const services = [
   "Gestion de Redes Sociales",
@@ -16,7 +16,7 @@ const Footer = () => {
 
   return (
     <footer className="glass-panel border-t border-border/30 py-16">
-      <div className="container mx-auto px-4 lg:px-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+      <div className="container mx-auto px-4 lg:px-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
         <div>
           <h3 className="font-heading font-bold text-lg mb-3">
             SOS <span className="gradient-text">Marketing Digital</span>
@@ -53,6 +53,18 @@ const Footer = () => {
             <a href="https://www.facebook.com/marketingsosagency" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors text-sm">Facebook</a>
             <a href="https://www.behance.net/stivenochoa" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors text-sm">Behance</a>
           </div>
+        </div>
+
+        <div>
+          <h4 className="font-heading font-semibold text-sm mb-3 text-foreground">Legal y Confianza</h4>
+          <ul className="space-y-2">
+            <li>
+              <Link to="/privacy-policy" className="text-muted-foreground text-sm hover:text-foreground transition-colors">Privacy Policy</Link>
+            </li>
+            <li>
+              <Link to="/disclaimer" className="text-muted-foreground text-sm hover:text-foreground transition-colors">Disclaimer</Link>
+            </li>
+          </ul>
         </div>
       </div>
       <div className="container mx-auto px-4 lg:px-8 mt-10 pt-6 border-t border-border/20 text-center text-xs text-muted-foreground">
