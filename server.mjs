@@ -10,6 +10,7 @@ const publicDir = path.join(__dirname, "public");
 
 const PORT = Number(process.env.PORT || 8080);
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
 
 const CONTENT_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -55,6 +56,52 @@ const serveFile = async (res, fullPath) => {
   res.end(file);
 };
 
+const getClientIp = (req) => {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.trim()) {
+    return forwarded.split(",")[0].trim();
+  }
+  return req.socket?.remoteAddress || "";
+};
+
+const verifyRecaptcha = async (token, clientIp) => {
+  if (!RECAPTCHA_SECRET_KEY) {
+    return { ok: false, error: "Falta RECAPTCHA_SECRET_KEY en el servidor.", status: 500 };
+  }
+
+  if (!token) {
+    return { ok: false, error: "reCAPTCHA es obligatorio.", status: 400 };
+  }
+
+  const params = new URLSearchParams({
+    secret: RECAPTCHA_SECRET_KEY,
+    response: token,
+  });
+
+  if (clientIp) {
+    params.set("remoteip", clientIp);
+  }
+
+  const verifyResponse = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params.toString(),
+  });
+
+  if (!verifyResponse.ok) {
+    return { ok: false, error: "No se pudo validar reCAPTCHA.", status: 502 };
+  }
+
+  const verifyData = await verifyResponse.json();
+  if (!verifyData.success) {
+    return { ok: false, error: "La validacion de reCAPTCHA fallo.", status: 400 };
+  }
+
+  return { ok: true };
+};
+
 const handleContact = async (req, res) => {
   try {
     if (!RESEND_API_KEY) {
@@ -68,7 +115,14 @@ const handleContact = async (req, res) => {
     }
 
     const payload = JSON.parse(body || "{}");
-    const { name, email, service, message } = payload;
+    const { name, email, service, message, recaptchaToken } = payload;
+    const clientIp = getClientIp(req);
+
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken, clientIp);
+    if (!recaptchaResult.ok) {
+      sendJson(res, recaptchaResult.status, { success: false, error: recaptchaResult.error });
+      return;
+    }
 
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",

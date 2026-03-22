@@ -4,7 +4,56 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import type { Plugin } from "vite";
 
-function contactApiDevPlugin(apiKey?: string): Plugin {
+const getClientIp = (req: { headers?: Record<string, string | string[] | undefined>; socket?: { remoteAddress?: string | undefined } }) => {
+  const forwarded = req.headers?.["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.trim()) {
+    return forwarded.split(",")[0].trim();
+  }
+  if (Array.isArray(forwarded) && forwarded.length > 0) {
+    return forwarded[0];
+  }
+  return req.socket?.remoteAddress || "";
+};
+
+const verifyRecaptcha = async (token: string, secret?: string, clientIp?: string) => {
+  if (!secret) {
+    return { ok: false, error: "Falta RECAPTCHA_SECRET_KEY en el entorno.", status: 500 };
+  }
+
+  if (!token) {
+    return { ok: false, error: "reCAPTCHA es obligatorio.", status: 400 };
+  }
+
+  const params = new URLSearchParams({
+    secret,
+    response: token,
+  });
+
+  if (clientIp) {
+    params.set("remoteip", clientIp);
+  }
+
+  const verifyResponse = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params.toString(),
+  });
+
+  if (!verifyResponse.ok) {
+    return { ok: false, error: "No se pudo validar reCAPTCHA.", status: 502 };
+  }
+
+  const verifyData = await verifyResponse.json();
+  if (!verifyData.success) {
+    return { ok: false, error: "La validacion de reCAPTCHA fallo.", status: 400 };
+  }
+
+  return { ok: true, status: 200 };
+};
+
+function contactApiDevPlugin(apiKey?: string, recaptchaSecret?: string): Plugin {
   return {
     name: "contact-api-dev-plugin",
     apply: "serve",
@@ -22,11 +71,20 @@ function contactApiDevPlugin(apiKey?: string): Plugin {
           }
 
           const payload = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
-          const { name, email, service, message } = payload;
+          const { name, email, service, message, recaptchaToken } = payload;
           if (!apiKey) {
             res.statusCode = 500;
             res.setHeader("Content-Type", "application/json");
             res.end(JSON.stringify({ success: false, error: "Falta RESEND_API_KEY en el entorno." }));
+            return;
+          }
+
+          const clientIp = getClientIp(req);
+          const recaptchaResult = await verifyRecaptcha(recaptchaToken, recaptchaSecret, clientIp);
+          if (!recaptchaResult.ok) {
+            res.statusCode = recaptchaResult.status;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ success: false, error: recaptchaResult.error }));
             return;
           }
 
@@ -75,6 +133,7 @@ function contactApiDevPlugin(apiKey?: string): Plugin {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const resendApiKey = env.RESEND_API_KEY || process.env.RESEND_API_KEY;
+  const recaptchaSecretKey = env.RECAPTCHA_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY;
 
   return {
     server: {
@@ -84,7 +143,7 @@ export default defineConfig(({ mode }) => {
         overlay: false,
       },
     },
-    plugins: [react(), mode === "development" && componentTagger(), contactApiDevPlugin(resendApiKey)].filter(Boolean),
+    plugins: [react(), mode === "development" && componentTagger(), contactApiDevPlugin(resendApiKey, recaptchaSecretKey)].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

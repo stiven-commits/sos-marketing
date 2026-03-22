@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -12,29 +12,137 @@ const serviceOptions = [
   "Produccion de Video",
 ];
 
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready?: (cb: () => void) => void;
+      render: (
+        container: HTMLElement,
+        parameters: {
+          sitekey: string;
+          callback: (token: string) => void;
+          "expired-callback"?: () => void;
+          "error-callback"?: () => void;
+        },
+      ) => number;
+      reset: (widgetId?: number) => void;
+    };
+  }
+}
+
 const ContactForm = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", service: "", message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [recaptchaToken, setRecaptchaToken] = useState("");
+  const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
+  const recaptchaRef = useRef<HTMLDivElement | null>(null);
+  const recaptchaWidgetId = useRef<number | null>(null);
+  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+
+  useEffect(() => {
+    if (!recaptchaSiteKey) {
+      return;
+    }
+
+    const markReady = () => {
+      if (window.grecaptcha?.ready) {
+        window.grecaptcha.ready(() => setIsRecaptchaReady(true));
+        return;
+      }
+
+      if (typeof window.grecaptcha?.render === "function") {
+        setIsRecaptchaReady(true);
+      }
+    };
+
+    const currentScript = document.querySelector<HTMLScriptElement>('script[src*="recaptcha/api.js"]');
+    if (currentScript) {
+      if (window.grecaptcha) {
+        markReady();
+      } else {
+        currentScript.addEventListener("load", markReady, { once: true });
+      }
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://www.google.com/recaptcha/api.js?render=explicit";
+    script.async = true;
+    script.defer = true;
+    script.onload = markReady;
+    document.head.appendChild(script);
+  }, [recaptchaSiteKey]);
+
+  useEffect(() => {
+    if (!isRecaptchaReady || !window.grecaptcha || !recaptchaRef.current || recaptchaWidgetId.current !== null || !recaptchaSiteKey) {
+      return;
+    }
+
+    if (typeof window.grecaptcha.render !== "function") {
+      setFormError("No se pudo inicializar reCAPTCHA. Recarga la pagina e intenta de nuevo.");
+      return;
+    }
+
+    recaptchaWidgetId.current = window.grecaptcha.render(recaptchaRef.current, {
+      sitekey: recaptchaSiteKey,
+      callback: (token: string) => {
+        setRecaptchaToken(token);
+        setFormError("");
+      },
+      "expired-callback": () => setRecaptchaToken(""),
+      "error-callback": () => setRecaptchaToken(""),
+    });
+  }, [isRecaptchaReady, recaptchaSiteKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
 
-    const res = await fetch("/api/contact", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: form.name,
-        email: form.email,
-        service: form.service,
-        message: form.message,
-      }),
-    });
+    if (!recaptchaSiteKey) {
+      setFormError("No se configuró reCAPTCHA en el sitio.");
+      return;
+    }
 
-    if (res.ok) {
-      setForm({ name: "", email: "", service: "", message: "" });
-      navigate("/gracias");
+    if (!recaptchaToken) {
+      setFormError("Completa la verificacion reCAPTCHA.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          service: form.service,
+          message: form.message,
+          recaptchaToken,
+        }),
+      });
+
+      if (res.ok) {
+        setForm({ name: "", email: "", service: "", message: "" });
+        setRecaptchaToken("");
+        if (window.grecaptcha && recaptchaWidgetId.current !== null) {
+          window.grecaptcha.reset(recaptchaWidgetId.current);
+        }
+        navigate("/gracias");
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+      setFormError(data?.error || "No se pudo enviar el formulario.");
+    } catch {
+      setFormError("Ocurrio un error de red al enviar el formulario.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -104,12 +212,23 @@ const ContactForm = () => {
               placeholder="Cuentanos sobre tu proyecto..."
             />
           </div>
+
+          <div className="space-y-2">
+            <div ref={recaptchaRef} />
+            {!recaptchaSiteKey && (
+              <p className="text-xs text-destructive">Falta configurar VITE_RECAPTCHA_SITE_KEY en el entorno.</p>
+            )}
+          </div>
+
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
+
           <button
             type="submit"
+            disabled={isSubmitting || !recaptchaSiteKey}
             className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm btn-glow"
           >
             <Send className="w-4 h-4" />
-            Enviar mensaje
+            {isSubmitting ? "Enviando..." : "Enviar mensaje"}
           </button>
         </motion.form>
       </div>
