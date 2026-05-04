@@ -15,6 +15,7 @@ import DesarrolloWeb from "./pages/DesarrolloWeb.tsx";
 import Fotografia from "./pages/Fotografia.tsx";
 import ProduccionVideo from "./pages/ProduccionVideo.tsx";
 import IAAutomation from "./pages/IAAutomation.tsx";
+import LanzamientoMarcaCuestionario from "./pages/LanzamientoMarcaCuestionario.tsx";
 import Legal from "./pages/Legal";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/servicios/fotografia" element={<Fotografia />} />
           <Route path="/servicios/produccion-video" element={<ProduccionVideo />} />
           <Route path="/servicios/ia-automatizacion" element={<IAAutomation />} />
+          <Route path="/cuestionario-lanzamiento-marca" element={<LanzamientoMarcaCuestionario />} />
           <Route path="/privacy-policy" element={<Legal title="Privacy Policy" content={<div className="space-y-6">
   <p><strong>Last updated: January 13, 2022</strong></p>
   <p>This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your information when You use the Service and tells You about Your privacy rights and how the law protects You.</p>

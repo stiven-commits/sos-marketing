@@ -156,6 +156,79 @@ const handleContact = async (req, res) => {
   }
 };
 
+const handleQuestionnaire = async (req, res) => {
+  try {
+    if (!RESEND_API_KEY) {
+      sendJson(res, 500, { success: false, error: "Falta RESEND_API_KEY en el servidor." });
+      return;
+    }
+
+    let body = "";
+    for await (const chunk of req) {
+      body += chunk;
+    }
+
+    const payload = JSON.parse(body || "{}");
+    const clientIp = getClientIp(req);
+
+    const recaptchaResult = await verifyRecaptcha(payload?.recaptchaToken, clientIp);
+    if (!recaptchaResult.ok) {
+      sendJson(res, recaptchaResult.status, { success: false, error: recaptchaResult.error });
+      return;
+    }
+
+    const field = (label, value) => `<p><b>${label}:</b> ${String(value || "")}</p>`;
+
+    const resendResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Web <atencion@sosmarketing.agency>",
+        to: ["atencion@sosmarketing.agency"],
+        subject: "Nuevo cuestionario - Lanzamiento de Marca",
+        html: `
+          <h2>Cuestionario de Diagnostico y Estrategia</h2>
+          <h3>1. El Producto y su Promesa Estrella</h3>
+          ${field("Nombre comercial", payload?.nombreProducto)}
+          ${field("Promesa 9 segundos", payload?.promesa9s)}
+          ${field("Composicion tecnica", payload?.composicion)}
+          ${field("Diferenciador clave", payload?.diferenciador)}
+          ${field("Certificaciones", payload?.certificaciones)}
+          <h3>2. El Mercado y la Competencia</h3>
+          ${field("Situacion actual", payload?.situacionActual)}
+          ${field("Competencia local", payload?.competenciaLocal)}
+          ${field("Ventaja competitiva", payload?.ventajaCompetitiva)}
+          <h3>3. El Cliente Ideal (Buyer Persona)</h3>
+          ${field("Comprador principal", payload?.compradorPrincipal)}
+          ${field("Perfil", payload?.perfil)}
+          ${field("Ciudades foco", payload?.ciudadesFoco)}
+          <h3>4. Objetivos de Negocio y Logistica</h3>
+          ${field("Meta corto plazo", payload?.metaCortoPlazo)}
+          ${field("Canales de venta", payload?.canalesVenta)}
+          ${field("Logistica de envio", payload?.logisticaEnvio)}
+          <h3>5. Identidad y Voz de Marca</h3>
+          ${field("Personalidad", payload?.personalidadMarca)}
+          ${field("Recursos visuales", payload?.recursosVisuales)}
+          ${field("Presupuesto de inversion", payload?.presupuestoInversion)}
+        `,
+      }),
+    });
+
+    if (!resendResponse.ok) {
+      const errText = await resendResponse.text();
+      sendJson(res, 500, { success: false, error: errText || "No se pudo enviar el cuestionario." });
+      return;
+    }
+
+    sendJson(res, 200, { success: true });
+  } catch {
+    sendJson(res, 500, { success: false, error: "Error interno al procesar la solicitud." });
+  }
+};
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
   const pathname = url.pathname;
@@ -166,6 +239,16 @@ const server = createServer(async (req, res) => {
   }
 
   if (pathname === "/api/contact") {
+    sendJson(res, 405, { success: false, error: "Metodo no permitido." });
+    return;
+  }
+
+  if (pathname === "/api/cuestionario-lanzamiento" && req.method === "POST") {
+    await handleQuestionnaire(req, res);
+    return;
+  }
+
+  if (pathname === "/api/cuestionario-lanzamiento") {
     sendJson(res, 405, { success: false, error: "Metodo no permitido." });
     return;
   }
