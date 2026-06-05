@@ -45,7 +45,7 @@ const verifyRecaptcha = async (token: string, secret?: string, clientIp?: string
     return { ok: false, error: "No se pudo validar reCAPTCHA.", status: 502 };
   }
 
-  const verifyData = await verifyResponse.json();
+  const verifyData = (await verifyResponse.json()) as { success?: boolean };
   if (!verifyData.success) {
     return { ok: false, error: "La validacion de reCAPTCHA fallo.", status: 400 };
   }
