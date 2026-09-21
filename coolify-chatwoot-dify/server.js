@@ -4,6 +4,8 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
+app.get('/', (req, res) => res.send('OK'));
+
 const CHATWOOT_URL = process.env.CHATWOOT_URL || 'https://buddychat.sosmarketing.agency';
 const CHATWOOT_TOKEN = process.env.CHATWOOT_TOKEN || 'NSF6H1StEgKrk9YGTP5Vijbc';
 const DIFY_URL = process.env.DIFY_URL || 'https://buddydify.sosmarketing.agency/v1';
