@@ -65,7 +65,15 @@ app.post('/webhook/chatwoot', async (req, res) => {
       try {
         // Enviar a Dify
         const difyRes = await axios.post(`${DIFY_URL}/chat-messages`, {
-          inputs: {},
+          inputs: {
+            conversation_id: String(conversationId),
+            contact_name: body.sender?.name || 'Usuario',
+            user_id: body.conversation?.contact_inbox?.source_id || body.sender?.additional_attributes?.social_profiles?.instagram || String(senderId),
+            content_type: body.attachments?.[0]?.file_type || body.content_type || 'text',
+            attachment_url: body.attachments?.[0]?.data_url || '',
+            message_type: body.message_type || 'incoming',
+            bot_paused: Boolean(conversation.custom_attributes?.bot_paused),
+          },
           query: combinedMessage,
           response_mode: 'blocking',
           user: `chatwoot_${senderId}`,
