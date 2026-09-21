@@ -54,6 +54,42 @@ async function transcribeAudio(audioUrl) {
   }
 }
 
+async function analyzeImage(imageUrl, userCaption) {
+  if (!imageUrl || !imageUrl.startsWith('http')) return userCaption || '';
+  try {
+    console.log(`[Bridge] Analizando imagen con GPT-4o-mini Vision...`);
+    const base64Url = await getAttachmentAsBase64(imageUrl);
+    const promptText = userCaption
+      ? `El usuario envió esta imagen con el texto: "${userCaption}". Describe detalladamente lo que ves (tratamientos, promociones, precios de la clínica CLEO) y formula la consulta para responderle.`
+      : `El usuario envió este flyer/imagen. Describe detalladamente todos los nombres de tratamientos, precios en USD y promociones que aparecen en la imagen para que el asistente de CLEO pueda responder y agendar al paciente.`;
+
+    const res = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: promptText },
+            { type: 'image_url', image_url: { url: base64Url } },
+          ],
+        },
+      ],
+    }, {
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const desc = res.data?.choices?.[0]?.message?.content || '';
+    console.log(`[Bridge] Imagen analizada con éxito: "${desc.substring(0, 80)}..."`);
+    return desc;
+  } catch (err) {
+    console.error('[Bridge] Error analizando imagen:', err.response?.data || err.message);
+    return userCaption || 'Consulta sobre imagen adjunta';
+  }
+}
+
 const app = express();
 app.use(express.json());
 
@@ -139,6 +175,14 @@ app.post('/webhook/chatwoot', async (req, res) => {
         }
       }
 
+      // Si es imagen, analizar con GPT-4o-mini Vision
+      if (contentType === 'image' && attachmentUrl) {
+        const imageText = await analyzeImage(attachmentUrl, combinedMessage);
+        if (imageText) {
+          combinedMessage = imageText;
+        }
+      }
+
       // Si no hubo texto pero sí imagen/audio/video, asignar mensaje por defecto para que Dify procese
       if (!combinedMessage) {
         if (contentType === 'image') {
@@ -152,12 +196,6 @@ app.post('/webhook/chatwoot', async (req, res) => {
         }
       }
 
-      // Si es imagen, convertir a Base64 para que OpenAI la procese sin problemas de certificados ni bloqueos de Meta
-      let finalAttachmentUrl = attachmentUrl;
-      if (contentType === 'image' && attachmentUrl) {
-        finalAttachmentUrl = await getAttachmentAsBase64(attachmentUrl);
-      }
-
       try {
         console.log(`[Bridge] Enviando a Dify: Conv ${conversationId} | Tipo: ${contentType} | Query: "${combinedMessage}" | Url: ${attachmentUrl.substring(0, 60)}...`);
 
@@ -168,7 +206,7 @@ app.post('/webhook/chatwoot', async (req, res) => {
             contact_name: lastBody.sender?.name || 'Usuario',
             user_id: lastBody.conversation?.contact_inbox?.source_id || lastBody.sender?.additional_attributes?.social_profiles?.instagram || String(senderId),
             content_type: contentType,
-            attachment_url: finalAttachmentUrl,
+            attachment_url: attachmentUrl,
             message_type: lastBody.message_type || 'incoming',
             bot_paused: Boolean(conversation.custom_attributes?.bot_paused),
           },
