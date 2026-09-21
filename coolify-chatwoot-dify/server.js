@@ -44,18 +44,14 @@ app.post('/webhook/chatwoot', async (req, res) => {
   if (body.message_type === 'incoming') {
     // Si el bot está pausado por un humano, no responder
     const pausedUntil = conversation.custom_attributes?.bot_paused_until;
-    if (conversation.custom_attributes?.bot_paused && pausedUntil && new Date(pausedUntil) > new Date()) {
-      return;
-    }
+    if (conversation.custom_attributes?.bot_paused && pausedUntil && new Date(pausedUntil) > new Date()) return;
 
     const content = body.content || '';
     const senderId = body.sender?.id || 'anon';
     const bufferKey = `${inboxId}_${conversationId}`;
 
     // Buffer de 8 segundos para juntar mensajes consecutivos
-    if (!messageBuffers.has(bufferKey)) {
-      messageBuffers.set(bufferKey, []);
-    }
+    if (!messageBuffers.has(bufferKey)) messageBuffers.set(bufferKey, []);
     messageBuffers.get(bufferKey).push(content);
 
     setTimeout(async () => {
