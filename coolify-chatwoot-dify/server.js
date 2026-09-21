@@ -209,6 +209,8 @@ app.post('/webhook/chatwoot', async (req, res) => {
             attachment_url: attachmentUrl,
             message_type: lastBody.message_type || 'incoming',
             bot_paused: Boolean(conversation.custom_attributes?.bot_paused),
+            current_time: new Date().toLocaleString('es-VE', { timeZone: 'America/Caracas', dateStyle: 'full', timeStyle: 'short' }),
+            current_hour: new Date().toLocaleTimeString('es-VE', { timeZone: 'America/Caracas', hour: '2-digit', hour12: false }),
           },
           query: combinedMessage,
           response_mode: 'blocking',
