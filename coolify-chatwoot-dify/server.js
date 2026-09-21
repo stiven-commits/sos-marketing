@@ -1,5 +1,23 @@
-const express = require('express');
-const axios = require('axios');
+const https = require('https');
+const insecureAgent = new https.Agent({ rejectUnauthorized: false });
+
+async function getAttachmentAsBase64(url) {
+  if (!url || !url.startsWith('http')) return url;
+  try {
+    const res = await axios.get(url, {
+      responseType: 'arraybuffer',
+      httpsAgent: insecureAgent,
+      timeout: 10000,
+    });
+    const mime = res.headers['content-type'] || 'image/jpeg';
+    const base64 = Buffer.from(res.data).toString('base64');
+    console.log(`[Bridge] Adjunto descargado y convertido a Base64 (${base64.length} caracteres)`);
+    return `data:${mime};base64,${base64}`;
+  } catch (err) {
+    console.error('[Bridge] Error descargando adjunto:', err.message);
+    return url;
+  }
+}
 
 const app = express();
 app.use(express.json());
@@ -91,8 +109,14 @@ app.post('/webhook/chatwoot', async (req, res) => {
         }
       }
 
+      // Si es imagen, convertir a Base64 para que OpenAI la procese sin problemas de certificados ni bloqueos de Meta
+      let finalAttachmentUrl = attachmentUrl;
+      if (contentType === 'image' && attachmentUrl) {
+        finalAttachmentUrl = await getAttachmentAsBase64(attachmentUrl);
+      }
+
       try {
-        console.log(`[Bridge] Enviando a Dify: Conv ${conversationId} | Tipo: ${contentType} | Query: "${combinedMessage}" | Url: ${attachmentUrl}`);
+        console.log(`[Bridge] Enviando a Dify: Conv ${conversationId} | Tipo: ${contentType} | Query: "${combinedMessage}" | Url: ${attachmentUrl.substring(0, 60)}...`);
 
         // Enviar a Dify
         const difyRes = await axios.post(`${DIFY_URL}/chat-messages`, {
@@ -101,7 +125,7 @@ app.post('/webhook/chatwoot', async (req, res) => {
             contact_name: lastBody.sender?.name || 'Usuario',
             user_id: lastBody.conversation?.contact_inbox?.source_id || lastBody.sender?.additional_attributes?.social_profiles?.instagram || String(senderId),
             content_type: contentType,
-            attachment_url: attachmentUrl,
+            attachment_url: finalAttachmentUrl,
             message_type: lastBody.message_type || 'incoming',
             bot_paused: Boolean(conversation.custom_attributes?.bot_paused),
           },
