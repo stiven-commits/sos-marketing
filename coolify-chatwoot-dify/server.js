@@ -48,32 +48,61 @@ app.post('/webhook/chatwoot', async (req, res) => {
     const pausedUntil = conversation.custom_attributes?.bot_paused_until;
     if (conversation.custom_attributes?.bot_paused && pausedUntil && new Date(pausedUntil) > new Date()) return;
 
-    const content = body.content || '';
     const senderId = body.sender?.id || 'anon';
     const bufferKey = `${inboxId}_${conversationId}`;
 
+    const attachment = body.attachments?.[0];
+    const itemData = {
+      text: body.content || '',
+      attachmentUrl: attachment?.data_url || '',
+      fileType: attachment?.file_type || (body.attachments?.length ? 'image' : body.content_type) || 'text',
+      rawBody: body,
+    };
+
     // Buffer de 8 segundos para juntar mensajes consecutivos
     if (!messageBuffers.has(bufferKey)) messageBuffers.set(bufferKey, []);
-    messageBuffers.get(bufferKey).push(content);
+    messageBuffers.get(bufferKey).push(itemData);
 
     setTimeout(async () => {
       const buffer = messageBuffers.get(bufferKey);
       if (!buffer || buffer.length === 0) return;
       messageBuffers.delete(bufferKey);
 
-      const combinedMessage = buffer.join(' ').trim();
-      if (!combinedMessage) return;
+      // Combinar textos
+      const textParts = buffer.map(item => item.text).filter(Boolean);
+      let combinedMessage = textParts.join(' ').trim();
+
+      // Buscar si hubo algún archivo adjunto en los mensajes del buffer
+      const itemWithAttachment = buffer.find(item => item.attachmentUrl);
+      const attachmentUrl = itemWithAttachment?.attachmentUrl || '';
+      const contentType = itemWithAttachment?.fileType || 'text';
+      const lastBody = buffer[buffer.length - 1].rawBody;
+
+      // Si no hubo texto pero sí imagen/audio/video, asignar mensaje por defecto para que Dify procese
+      if (!combinedMessage) {
+        if (contentType === 'image') {
+          combinedMessage = 'Analiza la imagen adjunta y responde a la consulta del usuario.';
+        } else if (contentType === 'audio') {
+          combinedMessage = 'Nota de voz adjunta.';
+        } else if (contentType === 'video') {
+          combinedMessage = 'Video adjunto.';
+        } else {
+          return; // No hay texto ni archivo
+        }
+      }
 
       try {
+        console.log(`[Bridge] Enviando a Dify: Conv ${conversationId} | Tipo: ${contentType} | Query: "${combinedMessage}" | Url: ${attachmentUrl}`);
+
         // Enviar a Dify
         const difyRes = await axios.post(`${DIFY_URL}/chat-messages`, {
           inputs: {
             conversation_id: String(conversationId),
-            contact_name: body.sender?.name || 'Usuario',
-            user_id: body.conversation?.contact_inbox?.source_id || body.sender?.additional_attributes?.social_profiles?.instagram || String(senderId),
-            content_type: body.attachments?.[0]?.file_type || body.content_type || 'text',
-            attachment_url: body.attachments?.[0]?.data_url || '',
-            message_type: body.message_type || 'incoming',
+            contact_name: lastBody.sender?.name || 'Usuario',
+            user_id: lastBody.conversation?.contact_inbox?.source_id || lastBody.sender?.additional_attributes?.social_profiles?.instagram || String(senderId),
+            content_type: contentType,
+            attachment_url: attachmentUrl,
+            message_type: lastBody.message_type || 'incoming',
             bot_paused: Boolean(conversation.custom_attributes?.bot_paused),
           },
           query: combinedMessage,
@@ -100,7 +129,7 @@ app.post('/webhook/chatwoot', async (req, res) => {
           content_attributes: { sent_by: 'habioo_bot', automation: true },
         }, { headers: { api_access_token: CHATWOOT_TOKEN } });
       } catch (err) {
-        console.error('Error procesando Dify/Chatwoot:', err.message);
+        console.error('Error procesando Dify/Chatwoot:', err.response?.data || err.message);
       }
     }, 8000);
   }
