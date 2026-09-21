@@ -3,6 +3,8 @@ const axios = require('axios');
 const https = require('https');
 const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+
 async function getAttachmentAsBase64(url) {
   if (!url || !url.startsWith('http')) return url;
   try {
@@ -18,6 +20,37 @@ async function getAttachmentAsBase64(url) {
   } catch (err) {
     console.error('[Bridge] Error descargando adjunto:', err.message);
     return url;
+  }
+}
+
+async function transcribeAudio(audioUrl) {
+  if (!audioUrl || !audioUrl.startsWith('http')) return '';
+  try {
+    console.log(`[Bridge] Descargando audio para transcribir: ${audioUrl.substring(0, 80)}...`);
+    const res = await axios.get(audioUrl, {
+      responseType: 'arraybuffer',
+      httpsAgent: insecureAgent,
+      timeout: 15000,
+    });
+
+    const formData = new FormData();
+    const blob = new Blob([res.data], { type: 'audio/ogg' });
+    formData.append('file', blob, 'audio.ogg');
+    formData.append('model', 'whisper-1');
+    formData.append('language', 'es');
+
+    const whisperRes = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+    });
+
+    const text = whisperRes.data?.text || '';
+    console.log(`[Bridge] Audio transcrito con éxito: "${text}"`);
+    return text;
+  } catch (err) {
+    console.error('[Bridge] Error transcribiendo audio con Whisper:', err.response?.data || err.message);
+    return '';
   }
 }
 
@@ -98,12 +131,20 @@ app.post('/webhook/chatwoot', async (req, res) => {
       const contentType = itemWithAttachment?.fileType || 'text';
       const lastBody = buffer[buffer.length - 1].rawBody;
 
+      // Si es audio, transcribir con Whisper de OpenAI
+      if (contentType === 'audio' && attachmentUrl) {
+        const audioText = await transcribeAudio(attachmentUrl);
+        if (audioText) {
+          combinedMessage = combinedMessage ? `${combinedMessage} ${audioText}` : audioText;
+        }
+      }
+
       // Si no hubo texto pero sí imagen/audio/video, asignar mensaje por defecto para que Dify procese
       if (!combinedMessage) {
         if (contentType === 'image') {
           combinedMessage = 'Analiza la imagen adjunta y responde a la consulta del usuario.';
         } else if (contentType === 'audio') {
-          combinedMessage = 'Nota de voz adjunta.';
+          combinedMessage = 'Nota de voz recibida pero no se pudo transcribir.';
         } else if (contentType === 'video') {
           combinedMessage = 'Video adjunto.';
         } else {
