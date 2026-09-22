@@ -105,6 +105,12 @@ const INBOX_ROUTING = {
   // '7': 'app-otra-key-dr-sira',
 };
 
+// Mapeo de Inbox a nombre de canal (para que el prompt de Dify adapte formato/tono)
+const INBOX_CHANNEL = {
+  '6': 'instagram', // CLEO Instagram
+  // '<id_inbox_whatsapp_cleo>': 'whatsapp',
+};
+
 const messageBuffers = new Map(); // Anti-ráfaga de mensajes de Instagram
 
 /**
@@ -251,6 +257,7 @@ app.post('/webhook/chatwoot', async (req, res) => {
             bot_paused: Boolean(conversation.custom_attributes?.bot_paused),
             current_time: new Date().toLocaleString('es-VE', { timeZone: 'America/Caracas', dateStyle: 'full', timeStyle: 'short' }),
             current_hour: new Date().toLocaleTimeString('es-VE', { timeZone: 'America/Caracas', hour: '2-digit', hour12: false }),
+            canal: INBOX_CHANNEL[inboxId] || 'instagram',
           },
           query: combinedMessage,
           response_mode: 'blocking',
