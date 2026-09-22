@@ -204,7 +204,12 @@ app.post('/webhook/chatwoot', async (req, res) => {
           inputs: {
             conversation_id: String(conversationId),
             contact_name: lastBody.sender?.name || 'Usuario',
-            user_id: lastBody.conversation?.contact_inbox?.source_id || lastBody.sender?.additional_attributes?.social_profiles?.instagram || String(senderId),
+            user_id: lastBody.sender?.additional_attributes?.social_instagram_user_name ||
+                     lastBody.sender?.additional_attributes?.social_profiles?.instagram ||
+                     lastBody.conversation?.meta?.sender?.additional_attributes?.social_instagram_user_name ||
+                     lastBody.conversation?.meta?.sender?.additional_attributes?.social_profiles?.instagram ||
+                     lastBody.conversation?.contact_inbox?.source_id ||
+                     String(senderId),
             content_type: contentType,
             attachment_url: attachmentUrl,
             message_type: lastBody.message_type || 'incoming',
