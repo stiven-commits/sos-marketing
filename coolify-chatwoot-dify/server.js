@@ -107,6 +107,36 @@ const INBOX_ROUTING = {
 
 const messageBuffers = new Map(); // Anti-ráfaga de mensajes de Instagram
 
+/**
+ * Builds an identity that does not change when a contact changes their display
+ * name or Instagram username. Chatwoot's contact_inbox.source_id is the
+ * external contact identifier for the channel; contact_id/sender.id are stable
+ * fallbacks for payload variants that do not include it.
+ */
+function getStableContactIdentity(body) {
+  const contactInbox = body.conversation?.contact_inbox;
+  const sourceId = String(contactInbox?.source_id || '').trim();
+  if (sourceId) return `source:${sourceId}`;
+
+  const contactId = contactInbox?.contact_id ?? body.sender?.id;
+  if (contactId !== null && contactId !== undefined && String(contactId).trim()) {
+    return `contact:${String(contactId).trim()}`;
+  }
+
+  return null;
+}
+
+function buildContactKey(accountId, inboxId, contactIdentity) {
+  return `chatwoot:${accountId}:${inboxId}:${contactIdentity}`;
+}
+
+function getInstagramUsername(body) {
+  const attributes = body.sender?.additional_attributes ||
+    body.conversation?.meta?.sender?.additional_attributes || {};
+  const username = attributes.social_instagram_user_name || attributes.social_profiles?.instagram || '';
+  return String(username).trim().replace(/^@/, '');
+}
+
 app.post('/webhook/chatwoot', async (req, res) => {
   res.sendStatus(200); // Responder rápido a Chatwoot
 
@@ -137,7 +167,13 @@ app.post('/webhook/chatwoot', async (req, res) => {
     const pausedUntil = conversation.custom_attributes?.bot_paused_until;
     if (conversation.custom_attributes?.bot_paused && pausedUntil && new Date(pausedUntil) > new Date()) return;
 
-    const senderId = body.sender?.id || 'anon';
+    const contactIdentity = getStableContactIdentity(body);
+    if (!contactIdentity) {
+      console.error(`[Bridge] Mensaje entrante sin identidad estable: conv ${conversationId}`);
+      return;
+    }
+
+    const contactKey = buildContactKey(accountId, inboxId, contactIdentity);
     const bufferKey = `${inboxId}_${conversationId}`;
 
     const attachment = body.attachments?.[0];
@@ -204,12 +240,11 @@ app.post('/webhook/chatwoot', async (req, res) => {
           inputs: {
             conversation_id: String(conversationId),
             contact_name: lastBody.sender?.name || 'Usuario',
-            user_id: lastBody.sender?.additional_attributes?.social_instagram_user_name ||
-                     lastBody.sender?.additional_attributes?.social_profiles?.instagram ||
-                     lastBody.conversation?.meta?.sender?.additional_attributes?.social_instagram_user_name ||
-                     lastBody.conversation?.meta?.sender?.additional_attributes?.social_profiles?.instagram ||
-                     lastBody.conversation?.contact_inbox?.source_id ||
-                     String(senderId),
+            // Stable key for the lead and telegram_msg_id lookup. Never use a
+            // display name or @username here: both can vary across events.
+            user_id: contactKey,
+            // Presentation-only value for the Instagram link shown in Telegram.
+            instagram_username: getInstagramUsername(lastBody),
             content_type: contentType,
             attachment_url: attachmentUrl,
             message_type: lastBody.message_type || 'incoming',
@@ -219,7 +254,7 @@ app.post('/webhook/chatwoot', async (req, res) => {
           },
           query: combinedMessage,
           response_mode: 'blocking',
-          user: `chatwoot_${senderId}`,
+          user: contactKey,
           conversation_id: '',
         }, {
           headers: {
@@ -248,4 +283,8 @@ app.post('/webhook/chatwoot', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Chatwoot-Dify Bridge corriendo en puerto ${PORT}`));
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Chatwoot-Dify Bridge corriendo en puerto ${PORT}`));
+}
+
+module.exports = { app, buildContactKey, getInstagramUsername, getStableContactIdentity };
