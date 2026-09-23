@@ -136,6 +136,20 @@ function buildContactKey(accountId, inboxId, contactIdentity) {
   return `chatwoot:${accountId}:${inboxId}:${contactIdentity}`;
 }
 
+// Dify ata la memoria del chat y las variables de conversación a SU propio
+// conversation_id. Si se manda vacío, cada mensaje abre una conversación nueva
+// y el bot pierde todo el historial, así que se persiste por conversación de
+// Chatwoot y se reenvía en los mensajes siguientes.
+function getDifyConversationId(conversation) {
+  return String(conversation.custom_attributes?.dify_conversation_id || '').trim();
+}
+
+async function guardarAtributos(accountId, conversationId, conversation, atributos) {
+  await axios.post(`${CHATWOOT_URL}/api/v1/accounts/${accountId}/conversations/${conversationId}/custom_attributes`, {
+    custom_attributes: { ...conversation.custom_attributes, ...atributos },
+  }, { headers: { api_access_token: CHATWOOT_TOKEN } });
+}
+
 function getInstagramUsername(body) {
   const attributes = body.sender?.additional_attributes ||
     body.conversation?.meta?.sender?.additional_attributes || {};
@@ -161,9 +175,11 @@ app.post('/webhook/chatwoot', async (req, res) => {
   // 2. Intervención humana: Si un asesor humano escribe, pausar bot 12 horas
   if (body.message_type === 'outgoing' && !body.private && body.content_attributes?.sent_by !== 'habioo_bot') {
     const hasta = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
-    await axios.post(`${CHATWOOT_URL}/api/v1/accounts/${accountId}/conversations/${conversationId}/custom_attributes`, {
-      custom_attributes: { bot_paused: true, paused_by: 'agente_humano', bot_paused_until: hasta },
-    }, { headers: { api_access_token: CHATWOOT_TOKEN } });
+    await guardarAtributos(accountId, conversationId, conversation, {
+      bot_paused: true,
+      paused_by: 'agente_humano',
+      bot_paused_until: hasta,
+    });
     return;
   }
 
@@ -242,7 +258,8 @@ app.post('/webhook/chatwoot', async (req, res) => {
         console.log(`[Bridge] Enviando a Dify: Conv ${conversationId} | Tipo: ${contentType} | Query: "${combinedMessage}" | Url: ${attachmentUrl.substring(0, 60)}...`);
 
         // Enviar a Dify
-        const difyRes = await axios.post(`${DIFY_URL}/chat-messages`, {
+        const difyConversationIdGuardado = getDifyConversationId(conversation);
+        const enviarADify = (difyConversationId) => axios.post(`${DIFY_URL}/chat-messages`, {
           inputs: {
             conversation_id: String(conversationId),
             contact_name: lastBody.sender?.name || 'Usuario',
@@ -262,13 +279,34 @@ app.post('/webhook/chatwoot', async (req, res) => {
           query: combinedMessage,
           response_mode: 'blocking',
           user: contactKey,
-          conversation_id: '',
+          conversation_id: difyConversationId,
         }, {
           headers: {
             Authorization: `Bearer ${difyKey}`,
             'Content-Type': 'application/json',
           },
         });
+
+        let difyRes;
+        try {
+          difyRes = await enviarADify(difyConversationIdGuardado);
+        } catch (err) {
+          // La conversación guardada puede haber sido borrada en Dify: se
+          // arranca una nueva en vez de dejar al usuario sin respuesta.
+          if (!difyConversationIdGuardado || err.response?.status !== 404) throw err;
+          difyRes = await enviarADify('');
+        }
+
+        const difyConversationIdNuevo = String(difyRes.data?.conversation_id || '').trim();
+        if (difyConversationIdNuevo && difyConversationIdNuevo !== difyConversationIdGuardado) {
+          try {
+            await guardarAtributos(accountId, conversationId, conversation, {
+              dify_conversation_id: difyConversationIdNuevo,
+            });
+          } catch (err) {
+            console.error('[Bridge] No se pudo guardar dify_conversation_id:', err.response?.data || err.message);
+          }
+        }
 
         let answer = difyRes.data?.answer;
         if (!answer) return;
