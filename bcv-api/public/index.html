@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Tasa BCV</title>
+<meta name="description" content="API pública de la tasa oficial del BCV (USD y EUR), leída directamente del Banco Central de Venezuela.">
+<style>
+  :root {
+    --bg: #f7f8fa; --card: #ffffff; --text: #16191f; --muted: #5b6472; --line: #e3e6ec;
+    --accent: #0a5cff; --accent-soft: #e8f0ff; --code-bg: #0f1420; --code-text: #d7e0f5;
+    --get: #0b7a43; --get-bg: #e2f5ea; --post: #a35200; --post-bg: #fdecd6; --ok: #0b7a43; --bad: #b3261e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1017; --card: #151a24; --text: #e8ecf4; --muted: #9aa5b8; --line: #263044;
+      --accent: #6b9bff; --accent-soft: #1b2744; --code-bg: #0a0d14; --code-text: #cfd9f1;
+      --get: #4cc786; --get-bg: #12301f; --post: #f0a24b; --post-bg: #34230f; --ok: #4cc786; --bad: #ff8a80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 1.9rem; letter-spacing: -.02em; }
+  header p { margin: 0; color: var(--muted); }
+  .status { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 18px 0 8px; padding: 12px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; font-size: .92rem; }
+  .status b { font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); margin-right: 6px; }
+  .dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); }
+  h2 { margin: 36px 0 6px; font-size: 1.15rem; }
+  .lead { color: var(--muted); margin: 0 0 14px; font-size: .95rem; }
+  .base { display: flex; gap: 8px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem; overflow-x: auto; }
+  .ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin: 12px 0; overflow: hidden; }
+  .ep-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 12px 14px; }
+  .badge { font: 700 .72rem ui-monospace, Menlo, Consolas, monospace; padding: 3px 8px; border-radius: 6px; letter-spacing: .04em; }
+  .get { color: var(--get); background: var(--get-bg); } .post { color: var(--post); background: var(--post-bg); }
+  .path { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; word-break: break-all; }
+  .ep p { margin: 0; padding: 0 14px 10px; color: var(--muted); font-size: .93rem; }
+  .params { padding: 0 14px 12px; font-size: .88rem; color: var(--muted); }
+  .params code, p code, li code { background: var(--accent-soft); color: var(--accent); padding: 1px 6px; border-radius: 5px; font-size: .85em; }
+  .try { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 14px 14px; }
+  button, .btn { font: inherit; font-size: .85rem; cursor: pointer; border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: 8px; padding: 6px 12px; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { color: #fff; opacity: .9; }
+  pre { margin: 0; padding: 12px 14px; background: var(--code-bg); color: var(--code-text); font: .82rem/1.5 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  .out { border-top: 1px solid var(--line); }
+  .out[hidden] { display: none; }
+  .out .meta { padding: 6px 14px; font-size: .78rem; color: var(--muted); background: var(--card); }
+  ul { padding-left: 20px; margin: 8px 0; } li { margin: 4px 0; }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px; margin: 12px 0; }
+  summary { cursor: pointer; padding: 8px 0; font-weight: 600; }
+  footer { margin-top: 40px; color: var(--muted); font-size: .85rem; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>API Tasa BCV</h1>
+    <p>Tasa oficial del Banco Central de Venezuela (USD y EUR) leída directamente del BCV. Pública, gratuita y sin API key.</p>
+  </header>
+
+  <div class="status" id="status"><span><span class="dot"></span>Consultando estado…</span></div>
+
+  <h2>URL base</h2>
+  <div class="base"><span id="base">https://…</span><button id="copy-base" type="button">Copiar</button></div>
+
+  <h2>Cómo leer la respuesta</h2>
+  <ul>
+    <li>Las tasas son <b>Bs por 1 USD / 1 EUR</b>, usando la <b>Venta (ASK)</b> oficial del BCV.</li>
+    <li><code>fecha</code> / <code>fechaValor</code> es la fecha en que la tasa rige. El BCV la publica la tarde anterior, así que la tasa de “hoy” ya estaba anunciada ayer.</li>
+    <li><b>Fines de semana y feriados:</b> aplica la última tasa anunciada antes de ese día. Un pago del sábado usa lo anunciado el viernes por la tarde. Para eso usa <code>/v1/tasa</code>.</li>
+    <li>Nunca se inventa una tasa. Si no hay una publicada para esa fecha, responde <b>404</b> con <code>motivo</code> e <code>historialDesde</code>. Una fecha futura recibe la más reciente con <code>provisional: true</code>.</li>
+    <li>Solo lectura por <code>GET</code>, con CORS abierto: se puede consumir desde un navegador, n8n, scripts o cualquier backend.</li>
+  </ul>
+
+  <h2>Rutas</h2>
+  <p class="lead">Pulsa <b>Probar</b> para ejecutar la consulta en vivo contra este mismo servidor.</p>
+  <div id="endpoints"></div>
+
+  <h2>Formato dolarapi</h2>
+  <p class="lead">Estas rutas devuelven la misma estructura que <code>ve.dolarapi.com</code>, para migrar cambiando solo la URL base. El BCV publica únicamente Venta: <code>compra</code> es <code>null</code> y <code>promedio</code> es igual a <code>venta</code>.</p>
+  <div id="endpoints-compat"></div>
+
+  <details>
+    <summary>Ejemplos de código</summary>
+    <p class="lead">Tasa que aplica a una fecha, en USD:</p>
+    <pre id="code-curl"></pre>
+    <p class="lead" style="margin-top:10px">JavaScript:</p>
+    <pre id="code-js"></pre>
+  </details>
+
+  <details>
+    <summary>Administración (requiere token)</summary>
+    <p class="lead">Rutas para el operador del servicio; no son públicas y no llevan CORS. Se envían con <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+    <ul>
+      <li><code>GET /v1/admin/pendientes</code> — tasas con un salto mayor al 10 % en espera de confirmación.</li>
+      <li><code>POST /v1/admin/pendientes/:id/confirmar</code> — confirma una tasa pendiente.</li>
+      <li><code>POST /v1/admin/importar</code> — rellena huecos con historial de otro sistema (nunca pisa lo leído del BCV).</li>
+    </ul>
+  </details>
+
+  <footer>
+    Fuente: <a href="https://www.bcv.org.ve/seccionportal/tipo-de-cambio-oficial-del-bcv" target="_blank" rel="noopener">bcv.org.ve</a> (portal y Excel oficial de tipos de cambio de referencia).
+    Las tasas se capturan automáticamente y se validan antes de guardarse. Úsala bajo tu responsabilidad: no sustituye la publicación oficial del BCV.
+  </footer>
+</div>
+
+<script>
+(function () {
+  var BASE = location.origin;
+  var HOY = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
+  document.getElementById('base').textContent = BASE;
+  document.getElementById('copy-base').addEventListener('click', function (e) { copiar(BASE, e.target); });
+
+  var PRINCIPALES = [
+    { m: 'GET', p: '/v1/tasa', q: 'moneda=USD&fecha=' + HOY, d: 'Tasa que aplica a una fecha (la última anunciada antes de ese día). Es la ruta recomendada para cálculos y facturación.',
+      params: '<code>moneda</code> USD | EUR (por defecto USD) · <code>fecha</code> AAAA-MM-DD (por defecto hoy)' },
+    { m: 'GET', p: '/v1/oficial', q: 'moneda=USD', d: 'Tasa vigente hoy.', params: '<code>moneda</code> USD | EUR (por defecto USD)' },
+    { m: 'GET', p: '/v1/historico', q: 'moneda=USD&desde=2026-10-01&hasta=2026-10-31', d: 'Histórico por fecha valor, de la más reciente a la más antigua.',
+      params: '<code>moneda</code> · <code>desde</code> y <code>hasta</code> AAAA-MM-DD (opcionales)' },
+    { m: 'GET', p: '/health', q: '', d: 'Estado del servicio: primera y última fecha valor disponibles.', params: '' }
+  ];
+  var COMPAT = [
+    { m: 'GET', p: '/v1/dolares/oficial', q: '', d: 'Tasa de hoy en USD.', params: '' },
+    { m: 'GET', p: '/v1/euros/oficial', q: '', d: 'Tasa de hoy en EUR.', params: '' },
+    { m: 'GET', p: '/v1/historicos/dolares/oficial', q: 'desde=2026-10-01&hasta=2026-10-31', d: 'Histórico USD, de la más antigua a la más reciente.', params: '<code>desde</code> · <code>hasta</code> AAAA-MM-DD (opcionales)' },
+    { m: 'GET', p: '/v1/historicos/euros/oficial', q: 'desde=2026-10-01&hasta=2026-10-31', d: 'Histórico EUR, de la más antigua a la más reciente.', params: '<code>desde</code> · <code>hasta</code> AAAA-MM-DD (opcionales)' },
+    { m: 'GET', p: '/v1/historicos/dolares/oficial/2026-11-02', q: '', d: 'Fila exacta con esa fecha valor (404 si no existe, p. ej. en fin de semana). Para “la tasa que aplica a un día” usa /v1/tasa.', params: '' }
+  ];
+
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; }
+
+  function copiar(texto, btn) {
+    var viejo = btn.textContent;
+    function listo() { btn.textContent = '¡Copiado!'; setTimeout(function () { btn.textContent = viejo; }, 1400); }
+    if (navigator.clipboard) navigator.clipboard.writeText(texto).then(listo, function () {});
+  }
+
+  function crear(ep, destino) {
+    var url = BASE + ep.p + (ep.q ? '?' + ep.q : '');
+    var card = el('div', 'ep');
+    var head = el('div', 'ep-head');
+    head.appendChild(el('span', 'badge ' + ep.m.toLowerCase(), ep.m));
+    head.appendChild(el('span', 'path', ep.p + (ep.q ? '?' + ep.q : '')));
+    card.appendChild(head);
+    card.appendChild(el('p', '', ep.d));
+    if (ep.params) { var pp = el('div', 'params'); pp.innerHTML = ep.params; card.appendChild(pp); }
+    var tr = el('div', 'try');
+    var probar = el('button', 'primary', 'Probar'); probar.type = 'button';
+    var cop = el('button', '', 'Copiar URL'); cop.type = 'button';
+    tr.appendChild(probar); tr.appendChild(cop); card.appendChild(tr);
+    var out = el('div', 'out'); out.hidden = true;
+    var meta = el('div', 'meta'); var pre = el('pre');
+    out.appendChild(meta); out.appendChild(pre); card.appendChild(out);
+    cop.addEventListener('click', function () { copiar(url, cop); });
+    probar.addEventListener('click', function () {
+      probar.disabled = true; meta.textContent = 'Consultando…'; pre.textContent = ''; out.hidden = false;
+      var t0 = performance.now();
+      fetch(url).then(function (r) {
+        return r.text().then(function (txt) {
+          var cuerpo = txt; try { var j = JSON.parse(txt); if (Array.isArray(j) && j.length > 5) { cuerpo = JSON.stringify(j.slice(0, 5), null, 2) + '\n… (' + j.length + ' registros en total; se muestran 5)'; } else { cuerpo = JSON.stringify(j, null, 2); } } catch (e) {}
+          meta.textContent = 'HTTP ' + r.status + ' · ' + Math.round(performance.now() - t0) + ' ms';
+          pre.textContent = cuerpo;
+        });
+      }).catch(function (e) { meta.textContent = 'Error de red'; pre.textContent = String(e); })
+        .then(function () { probar.disabled = false; });
+    });
+    destino.appendChild(card);
+  }
+
+  PRINCIPALES.forEach(function (e) { crear(e, document.getElementById('endpoints')); });
+  COMPAT.forEach(function (e) { crear(e, document.getElementById('endpoints-compat')); });
+
+  document.getElementById('code-curl').textContent = 'curl "' + BASE + '/v1/tasa?moneda=USD&fecha=' + HOY + '"';
+  document.getElementById('code-js').textContent =
+    "const r = await fetch('" + BASE + "/v1/tasa?moneda=USD&fecha=" + HOY + "');\n" +
+    "const { tasa, fechaValor } = await r.json();\n" +
+    "console.log(tasa, fechaValor); // Bs por 1 USD";
+
+  // Estado en vivo
+  var st = document.getElementById('status');
+  function pinta(ok, partes) {
+    st.textContent = '';
+    var a = el('span'); var d = el('span', 'dot ' + (ok ? 'ok' : 'bad')); a.appendChild(d);
+    a.appendChild(document.createTextNode(ok ? 'Servicio activo' : 'Sin respuesta')); st.appendChild(a);
+    partes.forEach(function (t) { var s = el('span'); s.appendChild(document.createTextNode(t[0] + ' ')); s.appendChild(el('b', '', t[1])); st.appendChild(s); });
+  }
+  function num(n) { return Number(n).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 4 }); }
+  Promise.all([
+    fetch(BASE + '/health').then(function (r) { return r.json(); }),
+    fetch(BASE + '/v1/oficial?moneda=USD').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+    fetch(BASE + '/v1/oficial?moneda=EUR').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+  ]).then(function (x) {
+    var h = x[0], partes = [];
+    if (x[1]) partes.push(['USD', num(x[1].tasa) + ' Bs']);
+    if (x[2]) partes.push(['EUR', num(x[2].tasa) + ' Bs']);
+    if (x[1]) partes.push(['Vigente', x[1].fechaValor]);
+    if (h.primeraFechaValor) partes.push(['Historial desde', h.primeraFechaValor]);
+    pinta(true, partes);
+  }).catch(function () { pinta(false, []); });
+})();
+</script>
+</body>
+</html>

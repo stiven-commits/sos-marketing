@@ -5,7 +5,7 @@ import { abrirDb } from '../src/db.js';
 import { parseNumeroVenezolano, leerPortal, listarExcels, leerExcel } from '../src/parse.js';
 import { guardarTasa, tasaVigenteEn } from '../src/store.js';
 import { validarPar } from '../src/validate.js';
-import { persistirPar } from '../src/jobs.js';
+import { persistirPar, importarHistorial } from '../src/jobs.js';
 
 const fx = (n, enc) => fs.readFileSync(new URL(`./fixtures/${n}`, import.meta.url), enc);
 
@@ -110,4 +110,87 @@ test('rutas con formato dolarapi', async () => {
     assert.equal((await fetch(`${base}/v1/historicos/dolares/oficial/2026-11-01`)).status, 404);
     assert.equal((await fetch(`${base}/v1/monedas/oficial`)).status, 404);
   } finally { srv.close(); }
+});
+
+test('nunca devuelve la tasa de hoy para una fecha anterior al historial ni dentro de un hueco', () => {
+  const db = dbConExcel();
+  assert.deepEqual(tasaVigenteEn(db, 'USD', '2026-10-01'), { sinTasa: 'antes-del-historial' });
+  assert.deepEqual(tasaVigenteEn(db, 'USD', '2023-01-10'), { sinTasa: 'antes-del-historial' });
+  assert.deepEqual(tasaVigenteEn(abrirDb(':memory:'), 'USD', '2026-11-05'), { sinTasa: 'sin-datos' });
+  assert.equal(tasaVigenteEn(db, 'USD', '2026-10-02').tasa, 866.5612); // primera fecha valor del historial
+  // Hueco: se borra la publicación del 15-oct (fecha valor 16-oct) y el 16-oct queda sin tasa.
+  db.prepare("DELETE FROM tasas WHERE fecha_valor='2026-10-16'").run();
+  assert.deepEqual(tasaVigenteEn(db, 'USD', '2026-10-16'), { sinTasa: 'hueco' });
+  assert.equal(tasaVigenteEn(db, 'USD', '2026-10-15').fecha_valor, '2026-10-15'); // vecinos intactos
+  assert.equal(tasaVigenteEn(db, 'USD', '2026-10-19').fecha_valor, '2026-10-19');
+});
+
+test('validaciones sin mínimo fijo en Bs: el historial de 2022 (USD 4,58) es válido', () => {
+  const db = abrirDb(':memory:');
+  assert.equal(validarPar(db, { fechaValor: '2022-01-04', usd: 4.5877, eur: 5.18566081 }, { hoy: '2026-11-05', backfill: true }).ok, true);
+  // El salto solo se mide contra una tasa vecina (≤ 7 días), no a través de un hueco de semanas.
+  guardarTasa(db, { fechaValor: '2022-09-07', moneda: 'USD', tasa: 5.5, fechaOperacion: '2022-09-06', fuente: 'BCV excel' });
+  guardarTasa(db, { fechaValor: '2022-09-07', moneda: 'EUR', tasa: 5.6, fechaOperacion: '2022-09-06', fuente: 'BCV excel' });
+  assert.equal(validarPar(db, { fechaValor: '2022-10-04', usd: 8.17, eur: 8.02 }, { hoy: '2026-11-05', backfill: true }).ok, true);
+  assert.equal(validarPar(db, { fechaValor: '2022-09-08', usd: 8.17, eur: 8.02 }, { hoy: '2026-11-05', backfill: true }).requiereConfirmacion, true);
+});
+
+test('importarHistorial rellena huecos, no pisa al BCV y aplica la regla de fin de semana', () => {
+  const db = dbConExcel();
+  const r = importarHistorial(db, [
+    { fecha: '2026-09-29', moneda: 'USD', promedio: 857.8876 }, { fecha: '2026-09-29', moneda: 'EUR', promedio: 974.71473336 },
+    { fecha: '2026-09-30', moneda: 'USD', promedio: 859.0629 }, { fecha: '2026-09-30', moneda: 'EUR', promedio: 973.30967507 },
+    { fecha: '2026-10-01', moneda: 'USD', promedio: 860.1753 }, { fecha: '2026-10-01', moneda: 'EUR', promedio: 976.84087593 },
+    { fecha: '2026-10-02', moneda: 'USD', promedio: 1 }, // intenta pisar al BCV: se ignora
+    { fecha: '2026-09-28', moneda: 'USD', promedio: 857.0058 }, { fecha: '2026-09-28', moneda: 'EUR', promedio: 0.976 }, // EUR ÷1000
+    { fecha: 'mal', moneda: 'USD', promedio: 1 },
+  ], { hoy: '2026-11-05' });
+  assert.equal(r.insertada, 6);
+  assert.equal(r.ignorada, 1);
+  assert.equal(r.rechazadas.length, 2);
+  assert.equal(tasaVigenteEn(db, 'USD', '2026-10-02').tasa, 866.5612); // sigue el del BCV
+  assert.equal(tasaVigenteEn(db, 'USD', '2026-10-01').tasa, 860.1753);
+  assert.equal(tasaVigenteEn(db, 'USD', '2026-10-01').fecha_operacion, '2026-09-30'); // inferida
+  assert.equal(tasaVigenteEn(db, 'USD', '2026-09-28').sinTasa, 'antes-del-historial'); // la primera no tiene anuncio
+});
+
+test('HTTP: 404 explicado para fechas sin tasa, formato dolarapi exacto, CORS y admin', async () => {
+  const { crearApp } = await import('../src/app.js');
+  const db = dbConExcel();
+  process.env.ADMIN_TOKEN = 'secreto-de-prueba';
+  const srv = crearApp(db).listen(0);
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    const vieja = await fetch(`${base}/v1/tasa?fecha=2025-03-10`);
+    assert.equal(vieja.status, 404);
+    const cuerpo = await vieja.json();
+    assert.equal(cuerpo.motivo, 'antes-del-historial');
+    assert.equal(cuerpo.historialDesde, '2026-10-02');
+
+    const futura = await (await fetch(`${base}/v1/tasa?fecha=2030-01-01&moneda=EUR`)).json();
+    assert.equal(futura.provisional, true);
+    assert.equal(futura.tasa, 1006.03263992);
+
+    const sab = await (await fetch(`${base}/v1/tasa?fecha=2026-10-31`)).json();
+    assert.equal(sab.tasa, 889.5754);
+
+    const hoy = await fetch(`${base}/v1/dolares/oficial`);
+    assert.equal(hoy.headers.get('access-control-allow-origin'), '*');
+    const j = await hoy.json();
+    assert.deepEqual(Object.keys(j).sort(), ['compra', 'fecha', 'fechaActualizacion', 'fuente', 'moneda', 'nombre', 'promedio', 'venta']);
+    assert.equal(j.moneda, 'USD');
+    assert.equal(j.nombre, 'Dólar');
+    assert.match(j.fechaActualizacion, /^\d{4}-\d{2}-\d{2}T00:00:00-04:00$/);
+    assert.equal(j.fechaActualizacion.slice(0, 10), j.fecha);
+
+    assert.equal((await fetch(`${base}/v1/admin/importar`, { method: 'POST' })).status, 401);
+    assert.equal((await fetch(`${base}/v1/admin/pendientes`)).headers.get('access-control-allow-origin'), null);
+    const imp = await fetch(`${base}/v1/admin/importar`, {
+      method: 'POST',
+      headers: { authorization: 'Bearer secreto-de-prueba', 'content-type': 'application/json' },
+      body: JSON.stringify([{ fecha: '2026-10-01', moneda: 'USD', tasa: 860.1753 }, { fecha: '2026-10-01', moneda: 'EUR', tasa: 976.84087593 }]),
+    });
+    assert.equal(imp.status, 200);
+    assert.equal((await imp.json()).insertada, 2);
+  } finally { srv.close(); delete process.env.ADMIN_TOKEN; }
 });

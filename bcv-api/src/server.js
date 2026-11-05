@@ -1,7 +1,7 @@
 import { abrirDb, getMeta, setMeta } from './db.js';
 import { crearApp } from './app.js';
 import { ahoraCaracas } from './tiempo.js';
-import { capturarPortal, sincronizarExcel, cierreDelDia } from './jobs.js';
+import { capturarPortal, sincronizarExcel, cierreDelDia, cargarHistorial } from './jobs.js';
 import { alertar } from './alerta.js';
 
 const db = abrirDb();
@@ -35,11 +35,15 @@ async function tick() {
 // Alinea al inicio de cada minuto.
 setTimeout(() => { tick(); setInterval(tick, 60_000); }, 60_000 - (Date.now() % 60_000));
 
-// Primer arranque con base vacía: carga el Excel del trimestre sin esperar a las 7:00.
-if (!getMeta(db, 'ultimo_excel')) {
-  sincronizarExcel(db, { hoy: ahoraCaracas().fecha })
-    .then((r) => console.log('[bootstrap excel]', JSON.stringify(r)))
-    .catch((e) => console.error('[bootstrap]', e.message));
+// Historial nunca cargado (base nueva, o una base que solo tenía el trimestre actual): carga todos los
+// Excel del BCV desde HISTORIAL_DESDE_ANIO (2022) sin esperar a las 7:00. Se reintenta en cada arranque
+// hasta que funcione.
+if (!getMeta(db, 'historial_cargado')) {
+  ocupado = true;
+  cargarHistorial(db, { hoy: ahoraCaracas().fecha })
+    .then((r) => console.log('[bootstrap historial]', JSON.stringify(r.map(({ rechazadas, ...x }) => ({ ...x, rechazadas: rechazadas?.length ?? 0 })))))
+    .catch((e) => console.error('[bootstrap]', e.message))
+    .finally(() => { ocupado = false; });
 }
 
 const port = Number(process.env.PORT || 3000);

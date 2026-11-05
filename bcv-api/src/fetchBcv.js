@@ -17,7 +17,7 @@ export async function fetchBcv(url, { binario = false, timeoutMs = 20000 } = {})
       headers: { 'user-agent': 'bcv-api/1.0 (+sosmarketing.agency)' },
       signal: AbortSignal.timeout(timeoutMs),
     });
-    if (!res.ok) throw new Error(`BCV ${res.status} en ${url}`);
+    if (!res.ok) throw Object.assign(new Error(`BCV ${res.status} en ${url}`), { status: res.status });
     return binario ? Buffer.from(await res.arrayBuffer()) : await res.text();
   } catch (e) {
     const code = e?.cause?.code ?? e?.code ?? '';

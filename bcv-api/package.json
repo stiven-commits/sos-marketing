@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test",
-    "qa:live": "node src/qa-live.js"
+    "qa:live": "node src/qa-live.js",
+    "qa:historial": "node src/qa-historial.js"
   },
   "dependencies": {
     "express": "^4.21.2",

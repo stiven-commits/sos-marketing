@@ -4,6 +4,7 @@ ENV NODE_ENV=production DB_PATH=/data/bcv.db PORT=3000
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY src ./src
+COPY public ./public
 COPY certs ./certs
 VOLUME /data
 EXPOSE 3000
