@@ -92,3 +92,22 @@ test('sin fecha_operacion explícita se rellena fecha_operacion con la fecha val
   guardarTasa(db, { fechaValor: '2026-11-02', moneda: 'USD', tasa: 889.5754, fuente: 'BCV portal' });
   assert.equal(tasaVigenteEn(db, 'USD', '2026-10-31').tasa, 889.5754);
 });
+
+test('rutas con formato dolarapi', async () => {
+  const { crearApp } = await import('../src/app.js');
+  const db = dbConExcel();
+  const srv = crearApp(db).listen(0);
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    const hoy = await (await fetch(`${base}/v1/euros/oficial`)).json();
+    assert.equal(hoy.fuente, 'oficial');
+    assert.equal(hoy.venta, hoy.promedio);
+    assert.ok(hoy.venta > 10);
+    const hist = await (await fetch(`${base}/v1/historicos/dolares/oficial?desde=2026-10-01&hasta=2026-10-05`)).json();
+    assert.deepEqual(hist.map((h) => h.fecha), ['2026-10-02', '2026-10-05']);
+    const uno = await (await fetch(`${base}/v1/historicos/dolares/oficial/2026-11-02`)).json();
+    assert.equal(uno.venta, 889.5754);
+    assert.equal((await fetch(`${base}/v1/historicos/dolares/oficial/2026-11-01`)).status, 404);
+    assert.equal((await fetch(`${base}/v1/monedas/oficial`)).status, 404);
+  } finally { srv.close(); }
+});

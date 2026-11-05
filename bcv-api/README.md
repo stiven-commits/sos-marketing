@@ -30,6 +30,9 @@ proyectos (Habioo, n8n, Chatwoot/Dify, etc.). Adaptación del plan `Habioo/docs/
 | `GET /v1/oficial?moneda=USD\|EUR` | tasa vigente hoy (incluye `promedio`, `fecha`, `fechaActualizacion`) |
 | `GET /v1/tasa?moneda=&fecha=YYYY-MM-DD` | tasa aplicable a esa fecha (regla única); `provisional:true` si la fecha es posterior a lo publicado |
 | `GET /v1/historico?moneda=&desde=&hasta=` | histórico por fecha valor |
+| `GET /v1/dolares/oficial` · `GET /v1/euros/oficial` | tasa de hoy, **mismo formato que dolarapi** (`fuente, nombre, compra, venta, promedio, fechaActualizacion`); `compra` es `null` (el BCV solo publica Venta) |
+| `GET /v1/historicos/dolares\|euros/oficial?desde=&hasta=` | histórico en formato dolarapi (ascendente por fecha valor) |
+| `GET /v1/historicos/dolares\|euros/oficial/:fecha` | fila exacta de esa fecha valor (404 si no existe, p. ej. fin de semana); para "la tasa que aplica a un día" usar `/v1/tasa` |
 | `GET /v1/admin/pendientes` · `POST /v1/admin/pendientes/:id/confirmar` | requieren `Authorization: Bearer $ADMIN_TOKEN` |
 
 ## Variables de entorno

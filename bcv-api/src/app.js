@@ -61,6 +61,37 @@ export function crearApp(db) {
     res.json(filas.map(publica));
   });
 
+  // --- Rutas con el mismo formato que dolarapi (ve.dolarapi.com), para cambiar solo la URL base. ---
+  // El BCV solo publica Venta (ASK); `compra` va null y `promedio` = `venta`.
+  const SLUG = { dolares: 'USD', euros: 'EUR' };
+  const formatoDolarapi = (f, extra = {}) => ({
+    fuente: 'oficial', nombre: 'Oficial', compra: null, venta: f.tasa, promedio: f.tasa, ...extra,
+  });
+
+  app.get('/v1/:slug(dolares|euros)/oficial', (req, res) => {
+    const f = tasaVigenteEn(db, SLUG[req.params.slug], ahoraCaracas().fecha);
+    if (!f) return res.status(404).json({ error: 'sin datos' });
+    res.json(formatoDolarapi(f, { fechaActualizacion: f.publicado_en ?? f.updated_at, fecha: f.fecha_valor }));
+  });
+
+  app.get('/v1/historicos/:slug(dolares|euros)/oficial', (req, res) => {
+    const { desde = '0000-01-01', hasta = '9999-12-31' } = req.query;
+    if (!FECHA.test(desde) && req.query.desde || !FECHA.test(hasta) && req.query.hasta) {
+      return res.status(400).json({ error: 'desde/hasta deben ser YYYY-MM-DD' });
+    }
+    const filas = db.prepare('SELECT * FROM tasas WHERE moneda=? AND fecha_valor BETWEEN ? AND ? ORDER BY fecha_valor ASC')
+      .all(SLUG[req.params.slug], desde, hasta);
+    res.json(filas.map((f) => formatoDolarapi({ tasa: f.tasa }, { fecha: f.fecha_valor })));
+  });
+
+  // Fila exacta de esa fecha valor (como dolarapi). Para "la tasa que aplica a un día" usar /v1/tasa.
+  app.get('/v1/historicos/:slug(dolares|euros)/oficial/:fecha', (req, res) => {
+    if (!FECHA.test(req.params.fecha)) return res.status(400).json({ error: 'fecha debe ser YYYY-MM-DD' });
+    const f = db.prepare('SELECT * FROM tasas WHERE moneda=? AND fecha_valor=?').get(SLUG[req.params.slug], req.params.fecha);
+    if (!f) return res.status(404).json({ error: 'sin tasa con esa fecha valor' });
+    res.json(formatoDolarapi({ tasa: f.tasa }, { fecha: f.fecha_valor }));
+  });
+
   app.get('/v1/admin/pendientes', exigirAdmin, (_req, res) => {
     res.json(db.prepare("SELECT * FROM pendientes WHERE estado='pendiente' ORDER BY id").all());
   });
