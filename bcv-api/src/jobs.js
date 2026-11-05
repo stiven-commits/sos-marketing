@@ -139,7 +139,7 @@ export async function cargarHistorial(db, ctx, { desdeAnio = Number(process.env.
 }
 
 /**
- * Importa tasas de otro sistema para rellenar huecos del BCV (p. ej. el historial de Habioo).
+ * Importa tasas de otro sistema para rellenar huecos del BCV.
  * Acepta [{ fecha|fechaValor, moneda: 'USD'|'EUR', tasa|promedio }]. Fuente 'importado': nunca pisa
  * una tasa leída del BCV, y el BCV la reemplaza si luego aparece. Valida igual que el BCV (cociente
  * EUR/USD y saltos frente a la tasa vecina).

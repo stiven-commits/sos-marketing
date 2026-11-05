@@ -1,5 +1,5 @@
 // Precedencia: una fuente de rango menor nunca pisa a una mayor.
-// 'importado' = historial traído de otro sistema (p. ej. Habioo/dolarapi) solo para rellenar huecos del BCV.
+// 'importado' = historial traído de otro sistema (p. ej. otra API o base de datos) solo para rellenar huecos del BCV.
 export const RANGO = { 'BCV excel': 2, 'BCV portal': 1, importado: 0 };
 
 export function ultimaFechaValor(db) {
