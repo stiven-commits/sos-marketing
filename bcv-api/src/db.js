@@ -13,7 +13,7 @@ export function abrirDb(ruta = process.env.DB_PATH || './data/bcv.db') {
       tasa            REAL NOT NULL,            -- Bs por unidad (Venta/ASK)
       fecha_operacion TEXT,                     -- tarde en que el BCV la publicó
       publicado_en    TEXT,                     -- ISO con offset
-      fuente          TEXT NOT NULL,            -- BCV excel | BCV portal | dolarapi
+      fuente          TEXT NOT NULL,            -- BCV excel | BCV portal
       created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
       updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
       PRIMARY KEY (fecha_valor, moneda)

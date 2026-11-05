@@ -10,13 +10,13 @@ proyectos (Habioo, n8n, Chatwoot/Dify, etc.). Adaptación del plan `Habioo/docs/
 |---|---|
 | lun–vie, cada 15 min de 15:00 a 19:59 | Lee el portal; si la fecha valor es nueva, valida y guarda; deja de consultar ese día |
 | todos los días 07:00 | Lee el Excel del trimestre (y el anterior en los primeros 10 días) y rellena/confirma |
-| lun–vie 20:00 sin tasa nueva | Prueba dolarapi; si tampoco hay, manda alarma |
+| lun–vie 20:00 sin tasa nueva | Manda alarma (el Excel de las 07:00 la recupera si el BCV publicó tarde) |
 | arranque con base vacía | Carga el Excel del trimestre |
 
 - **TLS:** el BCV envía un intermedio equivocado. `src/fetchBcv.js` añade el intermedio Sectigo DV R36
   (`certs/sectigo-dv-r36.pem`) solo para ese agente. Nunca se desactiva la verificación. El certificado del BCV
-  vence el **2026-11-20**: si falla, salta la alarma (`BcvTlsError`) y entra dolarapi.
-- **Precedencia:** `BCV excel` > `BCV portal` > `dolarapi`. Un monto distinto entre portal y Excel gana el Excel y avisa.
+  vence el **2026-11-20**: si falla, salta la alarma (`BcvTlsError`) y no se guarda nada.
+- **Precedencia:** `BCV excel` > `BCV portal`. Un monto distinto entre portal y Excel gana el Excel y avisa.
 - **Validaciones:** USD/EUR > 0, EUR ≥ 10, EUR/USD entre 0,9 y 1,4, fecha valor ≤ hoy+5 y no anterior a la última,
   variación ≤ 10 %. Un salto mayor se aparta en `pendientes` hasta confirmarlo.
 - **Regla de fines de semana/feriados:** la tasa de un día es la última anunciada **antes** de ese día
@@ -27,7 +27,7 @@ proyectos (Habioo, n8n, Chatwoot/Dify, etc.). Adaptación del plan `Habioo/docs/
 | Ruta | Descripción |
 |---|---|
 | `GET /health` | estado y última fecha valor |
-| `GET /v1/oficial?moneda=USD\|EUR` | tasa vigente hoy (incluye `promedio`, `fecha`, `fechaActualizacion`, compatible con dolarapi) |
+| `GET /v1/oficial?moneda=USD\|EUR` | tasa vigente hoy (incluye `promedio`, `fecha`, `fechaActualizacion`) |
 | `GET /v1/tasa?moneda=&fecha=YYYY-MM-DD` | tasa aplicable a esa fecha (regla única); `provisional:true` si la fecha es posterior a lo publicado |
 | `GET /v1/historico?moneda=&desde=&hasta=` | histórico por fecha valor |
 | `GET /v1/admin/pendientes` · `POST /v1/admin/pendientes/:id/confirmar` | requieren `Authorization: Bearer $ADMIN_TOKEN` |
@@ -35,7 +35,7 @@ proyectos (Habioo, n8n, Chatwoot/Dify, etc.). Adaptación del plan `Habioo/docs/
 ## Variables de entorno
 
 `PORT` (3000) · `DB_PATH` (`./data/bcv.db`) · `ADMIN_TOKEN` · `ALERT_WEBHOOK_URL` (Webhook de n8n que reenvía a
-correo/WhatsApp) · `DOLARAPI_URL` (opcional).
+correo/WhatsApp).
 
 ## Uso
 
@@ -58,4 +58,4 @@ Para alarmas: crear un Webhook en n8n y pegar su URL en `ALERT_WEBHOOK_URL`; el 
 
 - Desplegar y renovar el PEM del intermedio si el BCV cambia su cadena tras el 20-nov.
 - Cache HTTP / API key de lectura si se expone a internet (hoy lectura abierta, escritura con token).
-- Conciliar contra dolarapi los últimos 90 días antes de usarla en contabilidad.
+- Fuente única: **solo BCV directo**, sin dolarapi. Si los consumidores quieren respaldo, que lo agreguen del lado cliente (consultar esta API y, si falla, su propio dolarapi).

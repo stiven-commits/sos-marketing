@@ -28,7 +28,7 @@ export function crearApp(db) {
     res.json({ ok: true, ultimaFechaValor: ult?.fecha_valor ?? null, ultimoExcel: getMeta(db, 'ultimo_excel') });
   });
 
-  // Tasa vigente "hoy" (última publicada). Formato compatible con dolarapi/Habioo.
+  // Tasa vigente "hoy" (última publicada). Incluye promedio/fecha/fechaActualizacion por compatibilidad.
   app.get('/v1/oficial', (req, res) => {
     const moneda = String(req.query.moneda || 'USD').toUpperCase();
     if (!MONEDAS.includes(moneda)) return res.status(400).json({ error: 'moneda debe ser USD o EUR' });

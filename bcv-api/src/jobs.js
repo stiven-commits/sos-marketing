@@ -29,7 +29,7 @@ export async function capturarPortal(db, ctx) {
   const html = await fetchBcv(URL_PORTAL);
   const p = leerPortal(html);
   if (!p) {
-    await alertar(db, { clave: 'portal-ilegible', titulo: 'No se reconoce el portal del BCV', detalle: 'cambió el HTML; el respaldo seguirá activo' }, ctx.hoy);
+    await alertar(db, { clave: 'portal-ilegible', titulo: 'No se reconoce el portal del BCV', detalle: 'cambió el HTML; revisar el parser' }, ctx.hoy);
     return { estado: 'ilegible' };
   }
   const ult = ultimaFechaValor(db);
@@ -64,36 +64,12 @@ export async function sincronizarExcel(db, ctx) {
   return resumen;
 }
 
-/** Tercer intento: dolarapi (EUR < 10 se descarta, nunca se "corrige"). */
-export async function respaldoDolarapi(db, ctx) {
-  const base = process.env.DOLARAPI_URL || 'https://ve.dolarapi.com/v1';
-  const [u, e] = await Promise.all([`${base}/dolares/oficial`, `${base}/euros/oficial`].map(async (url) => {
-    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) throw new Error(`dolarapi ${res.status}`);
-    return res.json();
-  }));
-  const fechaValor = String(u.fechaActualizacion ?? '').slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaValor)) return { estado: 'ilegible' };
-  const ult = ultimaFechaValor(db);
-  if (ult && fechaValor <= ult) return { estado: 'sin-novedad' };
-  return persistirPar(db, { fechaValor, usd: Number(u.venta ?? u.promedio), eur: Number(e.venta ?? e.promedio) }, { fuente: 'dolarapi', hoy: ctx.hoy });
-}
-
-/** 20:00 de un día hábil: ¿faltó la tasa? Respaldo y, si tampoco, alarma. */
+/** 20:00 de un día hábil: ¿faltó la tasa? Si sí, alarma (el Excel de las 07:00 la recupera si el BCV publica tarde). */
 export async function cierreDelDia(db, ctx) {
   if (getMeta(db, 'captura_portal_dia') === ctx.hoy) return { estado: 'ok' };
   const ult = ultimaFechaValor(db);
   // Solo se espera tasa nueva si la última vigente vence hoy o antes (así los feriados no alarman).
   if (ult && ult > ctx.hoy) return { estado: 'no-se-esperaba' };
-  try {
-    const r = await respaldoDolarapi(db, ctx);
-    if (r.estado === 'guardada') {
-      await alertar(db, { clave: 'respaldo', titulo: 'Tasa BCV tomada de dolarapi', detalle: 'el BCV no entregó tasa nueva' }, ctx.hoy);
-      return { estado: 'respaldo' };
-    }
-  } catch (e) {
-    console.error('respaldo dolarapi falló:', e.message);
-  }
   await alertar(db, { clave: 'sin-tasa', titulo: 'No hay tasa BCV nueva', detalle: `última fecha valor: ${ult ?? 'ninguna'}` }, ctx.hoy);
   return { estado: 'sin-tasa' };
 }

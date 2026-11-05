@@ -1,4 +1,4 @@
-export const RANGO = { 'BCV excel': 3, 'BCV portal': 2, dolarapi: 1 };
+export const RANGO = { 'BCV excel': 2, 'BCV portal': 1 };
 
 export function ultimaFechaValor(db) {
   return db.prepare("SELECT MAX(fecha_valor) f FROM tasas WHERE moneda='USD'").get().f ?? null;
@@ -9,7 +9,7 @@ export function tasaAnterior(db, moneda, fechaValor) {
 }
 
 /**
- * Upsert con precedencia BCV excel > BCV portal > dolarapi.
+ * Upsert con precedencia BCV excel > BCV portal.
  * Devuelve 'insertada' | 'actualizada' | 'ignorada' | 'conflicto' (una fuente mayor corrigió un monto distinto).
  */
 export function guardarTasa(db, { fechaValor, moneda, tasa, fechaOperacion = null, publicadoEn = null, fuente }) {
@@ -26,7 +26,7 @@ export function guardarTasa(db, { fechaValor, moneda, tasa, fechaOperacion = nul
   db.prepare(`UPDATE tasas SET tasa=?, fecha_operacion=COALESCE(?,fecha_operacion), publicado_en=COALESCE(?,publicado_en),
               fuente=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE fecha_valor=? AND moneda=?`)
     .run(tasa, fechaOperacion, publicadoEn, fuente, fechaValor, moneda);
-  return difiere && RANGO[previa.fuente] >= 2 ? 'conflicto' : 'actualizada';
+  return difiere && RANGO[previa.fuente] >= 1 ? 'conflicto' : 'actualizada';
 }
 
 /** Regla única: la tasa de un día es la última anunciada ANTES de ese día (mayor fecha_operacion < fecha). */

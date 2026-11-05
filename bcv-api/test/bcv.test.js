@@ -86,9 +86,9 @@ test('precedencia: el Excel corrige al portal, el portal no pisa al Excel', asyn
   assert.equal(tasaVigenteEn(db, 'USD', '2026-11-05').fuente, 'BCV excel');
 });
 
-test('dolarapi rellena fecha_operacion con la fecha valor anterior', () => {
+test('sin fecha_operacion explícita se rellena fecha_operacion con la fecha valor anterior', () => {
   const db = abrirDb(':memory:');
-  guardarTasa(db, { fechaValor: '2026-10-30', moneda: 'USD', tasa: 889, fuente: 'dolarapi' });
-  guardarTasa(db, { fechaValor: '2026-11-02', moneda: 'USD', tasa: 889.5754, fuente: 'dolarapi' });
+  guardarTasa(db, { fechaValor: '2026-10-30', moneda: 'USD', tasa: 889, fuente: 'BCV portal' });
+  guardarTasa(db, { fechaValor: '2026-11-02', moneda: 'USD', tasa: 889.5754, fuente: 'BCV portal' });
   assert.equal(tasaVigenteEn(db, 'USD', '2026-10-31').tasa, 889.5754);
 });
